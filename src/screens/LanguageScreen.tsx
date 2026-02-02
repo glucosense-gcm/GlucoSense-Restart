@@ -1,0 +1,125 @@
+import React, { useState } from 'react';
+import { View, Text, Pressable, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { AuthStackParamList } from '../types/navigation';
+import { useAuth } from '../context/AuthContext';
+
+interface Language {
+  code: string;
+  name: string;
+  nativeName: string;
+  flag: string;
+}
+
+const LANGUAGES: Language[] = [
+  { code: 'uz', name: "O'zbekcha", nativeName: 'Uzbek', flag: '🇺🇿' },
+  { code: 'ru', name: 'Русский', nativeName: 'Russian', flag: '🇷🇺' },
+  { code: 'en', name: 'English', nativeName: 'English', flag: '🇬🇧' },
+];
+
+type LanguageScreenProps = {
+  navigation: NativeStackNavigationProp<AuthStackParamList, 'Language'>;
+};
+
+export default function LanguageScreen({ navigation }: LanguageScreenProps) {
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('uz');
+  const { setLanguageSelected } = useAuth();
+
+  const handleContinue = async () => {
+    try {
+      await AsyncStorage.setItem('@app_language', selectedLanguage);
+      await setLanguageSelected();
+      
+      // Navigate to Login screen
+      navigation.replace('Login');
+    } catch (error) {
+      console.error('Error saving language:', error);
+      Alert.alert('Error', 'Failed to save language');
+    }
+  };
+
+  return (
+    <View className="flex-1 bg-background" style={{ paddingTop: 40 }}>
+      <View className="flex-1 px-6 pt-12">
+        <View className="mb-10 items-center">
+          <View className="w-16 h-16 rounded-2xl bg-primary/20 items-center justify-center mb-4 border border-primary/40">
+            <Text className="text-4xl">💧</Text>
+          </View>
+          <Text className="text-3xl font-bold text-white mb-2">
+            GlucoSense
+          </Text>
+          <Text className="text-muted-foreground text-center text-sm max-w-[200px]">
+            Sog'ligingizni nazorat qilishning zamonaviy usuli
+          </Text>
+        </View>
+
+        <View className="mb-6">
+          <Text className="text-lg font-semibold text-foreground mb-1">
+            Tilni tanlang
+          </Text>
+          <Text className="text-sm text-muted-foreground">
+            Select interface language
+          </Text>
+        </View>
+
+        <View className="flex-1 gap-4">
+          {LANGUAGES.map((language) => (
+            <Pressable
+              key={language.code}
+              onPress={() => setSelectedLanguage(language.code)}
+              className={`p-4 flex-row items-center gap-4 rounded-2xl border-2 ${
+                selectedLanguage === language.code
+                  ? 'bg-primary/10 border-primary'
+                  : 'bg-card border-border/50'
+              }`}
+              style={({ pressed }) => ({
+                opacity: pressed ? 0.7 : 1,
+              })}
+            >
+              <View className="w-10 h-10 rounded-full bg-background items-center justify-center border border-border">
+                <Text className="text-2xl">{language.flag}</Text>
+              </View>
+
+              <View className="flex-1">
+                <Text className={`text-lg font-medium ${
+                  selectedLanguage === language.code ? 'text-foreground' : 'text-muted-foreground'
+                }`}>
+                  {language.name}
+                </Text>
+                {selectedLanguage === language.code && (
+                  <Text className="text-xs text-primary/80">Default</Text>
+                )}
+              </View>
+
+              {selectedLanguage === language.code ? (
+                <View className="w-6 h-6 rounded-full bg-primary items-center justify-center">
+                  <Ionicons name="checkmark" size={16} color="white" />
+                </View>
+              ) : (
+                <View className="w-6 h-6 rounded-full border-2 border-border" />
+              )}
+            </Pressable>
+          ))}
+        </View>
+
+        <View className="py-6 pb-8">
+          <Pressable
+            onPress={handleContinue}
+            className="flex-row items-center justify-center gap-2 bg-primary rounded-full py-4 px-6"
+            style={({ pressed }) => ({
+              opacity: pressed ? 0.8 : 1,
+              transform: [{ scale: pressed ? 0.98 : 1 }],
+            })}
+          >
+            <Text className="text-white font-semibold text-base">
+              Davom etish
+            </Text>
+            <Ionicons name="arrow-forward" size={20} color="white" />
+          </Pressable>
+        </View>
+      </View>
+    </View>
+  );
+}
