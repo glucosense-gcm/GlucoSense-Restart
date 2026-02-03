@@ -25,7 +25,7 @@ export default function RootNavigator() {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!isLanguageSelected || !isAuthenticated ? (
-          <Stack.Screen name="Auth" component={AuthStack} />
+          <Stack.Screen name="Auth" component={MainTabs} />
         ) : (
           <Stack.Screen name="Main" component={MainTabs} />
         )}
