@@ -19,7 +19,7 @@ export default function RootNavigator() {
 
   return (
     <NavigationContainer>
-      {!isLanguageSelected || !isAuthenticated ? (
+      {!isLanguageSelected ? (
         <AuthStack />
       ) : (
         <MainTabs />

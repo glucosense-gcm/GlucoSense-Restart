@@ -3,6 +3,8 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { View, Text } from 'react-native';
 import HomeScreen from '../screens/main/HomeScreen';
+import SettingsScreen from '../screens/main/SettingsScreen';
+import DeviceScreen from '../screens/main/DeviceScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -10,22 +12,6 @@ const HistoryScreen = () => (
   <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#020817' }}>
     <Ionicons name="time-outline" size={48} color="#3b82f6" />
     <Text style={{ color: '#ffffff', fontSize: 20, marginTop: 16, fontWeight: '600' }}>Tarix</Text>
-    <Text style={{ color: '#64748b', marginTop: 8 }}>Tez kunda...</Text>
-  </View>
-);
-
-const DeviceScreen = () => (
-  <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#020817' }}>
-    <Ionicons name="bluetooth-outline" size={48} color="#3b82f6" />
-    <Text style={{ color: '#ffffff', fontSize: 20, marginTop: 16, fontWeight: '600' }}>Qurilma</Text>
-    <Text style={{ color: '#64748b', marginTop: 8 }}>Tez kunda...</Text>
-  </View>
-);
-
-const SettingsScreen = () => (
-  <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#020817' }}>
-    <Ionicons name="settings-outline" size={48} color="#3b82f6" />
-    <Text style={{ color: '#ffffff', fontSize: 20, marginTop: 16, fontWeight: '600' }}>Sozlamalar</Text>
     <Text style={{ color: '#64748b', marginTop: 8 }}>Tez kunda...</Text>
   </View>
 );
