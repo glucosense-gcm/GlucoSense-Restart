@@ -24,51 +24,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const checkAuthStatus = async () => {
+    console.log('Ì¥ç Checking auth status...');
     try {
       const language = await AsyncStorage.getItem('@app_language');
+      console.log('Ì≥ù Language:', language);
       if (language) {
         setIsLanguageSelectedState(true);
       }
 
       const token = await AsyncStorage.getItem('@auth_token');
       const userData = await AsyncStorage.getItem('@user_data');
+      
+      console.log('Ì¥ë Token:', token ? 'EXISTS' : 'NULL');
+      console.log('Ì±§ UserData:', userData ? 'EXISTS' : 'NULL');
 
       if (token && userData) {
+        console.log('‚úÖ User authenticated!');
         setIsAuthenticated(true);
         setUser(JSON.parse(userData));
+      } else {
+        console.log('‚ùå User NOT authenticated');
       }
     } catch (error) {
-      console.error('Error checking auth status:', error);
+      console.error('‚ùå Error checking auth status:', error);
     } finally {
       setIsLoading(false);
+      console.log('‚úÖ Auth check complete');
     }
   };
 
   const login = async (token: string, userData: any) => {
+    console.log('Ì¥ê LOGIN called with token:', token);
     try {
       await AsyncStorage.setItem('@auth_token', token);
       await AsyncStorage.setItem('@user_data', JSON.stringify(userData));
+      console.log('‚úÖ Token and user data saved!');
       setIsAuthenticated(true);
       setUser(userData);
+      console.log('‚úÖ isAuthenticated set to TRUE');
     } catch (error) {
-      console.error('Error logging in:', error);
+      console.error('‚ùå Error logging in:', error);
       throw error;
     }
   };
 
   const logout = async () => {
+    console.log('Ì∫™ LOGOUT called');
     try {
       await AsyncStorage.removeItem('@auth_token');
       await AsyncStorage.removeItem('@user_data');
       setIsAuthenticated(false);
       setUser(null);
+      console.log('‚úÖ Logged out successfully');
     } catch (error) {
-      console.error('Error logging out:', error);
+      console.error('‚ùå Error logging out:', error);
       throw error;
     }
   };
 
   const setLanguageSelected = async () => {
+    console.log('Ìºê Language marked as selected');
     setIsLanguageSelectedState(true);
   };
 

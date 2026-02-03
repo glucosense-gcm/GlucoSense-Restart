@@ -1,11 +1,10 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { MainTabsParamList } from '../types/navigation';
 import { View, Text } from 'react-native';
 import HomeScreen from '../screens/main/HomeScreen';
 
-const Tab = createBottomTabNavigator<MainTabsParamList>();
+const Tab = createBottomTabNavigator();
 
 const HistoryScreen = () => (
   <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#020817' }}>
@@ -48,16 +47,13 @@ export default function MainTabs() {
           paddingBottom: 10,
           paddingTop: 10,
           elevation: 0,
+          shadowOpacity: 0,
         },
         tabBarActiveTintColor: '#3b82f6',
         tabBarInactiveTintColor: '#64748b',
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
-          marginTop: -4,
-        },
-        tabBarIconStyle: {
-          marginTop: 4,
         },
       }}
     >
@@ -67,7 +63,7 @@ export default function MainTabs() {
         options={{
           tabBarLabel: 'Asosiy',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'pulse' : 'pulse-outline'} size={24} color={color} />
+            <Ionicons name={focused ? 'pulse' : 'pulse-outline'} size={26} color={color} />
           ),
         }}
       />
@@ -77,7 +73,7 @@ export default function MainTabs() {
         options={{
           tabBarLabel: 'Tarix',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'document-text' : 'document-text-outline'} size={24} color={color} />
+            <Ionicons name={focused ? 'document-text' : 'document-text-outline'} size={26} color={color} />
           ),
         }}
       />
@@ -87,7 +83,7 @@ export default function MainTabs() {
         options={{
           tabBarLabel: 'Qurilma',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'flash' : 'flash-outline'} size={24} color={color} />
+            <Ionicons name={focused ? 'flash' : 'flash-outline'} size={26} color={color} />
           ),
         }}
       />
@@ -97,7 +93,7 @@ export default function MainTabs() {
         options={{
           tabBarLabel: 'Sozlamalar',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'options' : 'options-outline'} size={24} color={color} />
+            <Ionicons name={focused ? 'options' : 'options-outline'} size={26} color={color} />
           ),
         }}
       />

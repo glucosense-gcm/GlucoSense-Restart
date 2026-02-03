@@ -1,198 +1,286 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, StatusBar, Pressable, Image } from 'react-native';
+import React from 'react';
+import { View, Text, ScrollView, Pressable, Dimensions, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LineChart } from 'react-native-chart-kit';
-import { Dimensions } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 
 const screenWidth = Dimensions.get('window').width;
 
 export default function HomeScreen() {
   const { user } = useAuth();
-  const [currentGlucose] = useState(5.8);
-  const [glucoseData] = useState([4.5, 5.2, 5.8, 6.1, 5.9, 5.4, 5.8, 6.2, 5.7, 5.3, 5.8]);
+  const currentGlucose = 5.8;
+  
+  const getGlucoseColor = (value: number) => {
+    if (value < 3.9) return { main: '#eab308', bg: 'rgba(234, 179, 8, 0.15)', text: 'Past' };
+    if (value > 7.0) return { main: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', text: 'Yuqori' };
+    return { main: '#34d399', bg: 'rgba(52, 211, 153, 0.12)', text: 'Normal holat' };
+  };
+
+  const glucoseStatus = getGlucoseColor(currentGlucose);
+
+  console.log('glucoseStatus.main =', glucoseStatus.main);
 
   return (
-    <View className="flex-1 bg-background">
-      <StatusBar barStyle="light-content" />
-      
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View className="px-6 pt-12 pb-6 flex-row items-center justify-between">
-          <View className="flex-row items-center gap-3">
-            <View className="w-12 h-12 rounded-full bg-primary/20 items-center justify-center border-2 border-primary">
-              <Text className="text-xl">í±¤</Text>
+    <View style={styles.container}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarEmoji}>ï¿½ï¿½ï¿½</Text>
             </View>
             <View>
-              <Text className="text-xs text-muted-foreground">Xayrli kech,</Text>
-              <Text className="text-lg font-bold text-white">
-                {user?.name || 'Azizbek'}
-              </Text>
+              <Text style={styles.greeting}>Xayrli kech,</Text>
+              <Text style={styles.userName}>{user?.name || 'Azizbek'}</Text>
             </View>
           </View>
-          
-          <View className="flex-row gap-2">
-            <Pressable className="w-10 h-10 rounded-full bg-card items-center justify-center">
-              <Ionicons name="notifications-outline" size={22} color="#94a3b8" />
-              <View className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full" />
+          <View style={styles.headerRight}>
+            <Pressable style={styles.iconButton}>
+              <Ionicons name="notifications-outline" size={22} color="#8b92a8" />
+              <View style={styles.notificationDot} />
             </Pressable>
-            <Pressable className="w-10 h-10 rounded-full bg-card items-center justify-center">
-              <Ionicons name="settings-outline" size={22} color="#94a3b8" />
+            <Pressable style={styles.iconButton}>
+              <Ionicons name="settings-outline" size={22} color="#8b92a8" />
             </Pressable>
           </View>
         </View>
 
-        {/* Main Glucose Card */}
-        <View className="mx-6 mb-6">
-          <View className="rounded-3xl overflow-hidden" style={{
-            backgroundColor: '#0f172a',
-          }}>
-            {/* Glucose Value */}
-            <View className="px-8 pt-12 pb-8 items-center">
-              <View className="flex-row items-baseline mb-2">
-                <Text className="text-7xl font-bold" style={{ color: '#6ee7b7' }}>
-                  {currentGlucose}
-                </Text>
-                <Ionicons name="arrow-forward" size={32} color="#6ee7b7" style={{ marginLeft: 8 }} />
-              </View>
-              <Text className="text-lg text-muted-foreground mb-6">mmol/L</Text>
-              
-              {/* Status Badge */}
-              <View className="flex-row items-center gap-2 px-4 py-2 rounded-full bg-green-500/20">
-                <View className="w-2 h-2 rounded-full bg-green-500" />
-                <Text className="text-sm font-medium text-green-500">Normal holatda</Text>
-              </View>
-              
-              <Text className="text-xs text-muted-foreground mt-4">
-                Qidirg'ich bilan 5 daqiqa oldin
+        <View style={styles.mainCard}>
+          <View style={styles.glucoseSection}>
+            <View style={styles.glucoseValueRow}>
+              <Text style={[styles.glucoseValue, { color: glucoseStatus.main, textShadowColor: glucoseStatus.main, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 30 }]}>
+                {currentGlucose}
               </Text>
+              <Ionicons name="arrow-forward" size={32} color={glucoseStatus.main} style={{ marginTop: 20, marginLeft: 4 }} />
             </View>
+            
+            <Text style={styles.glucoseUnit}>mmol/L</Text>
+            
+            <View style={[styles.statusBadge, { backgroundColor: glucoseStatus.bg }]}>
+              <View style={[styles.statusDot, { backgroundColor: glucoseStatus.main }]} />
+              <Text style={[styles.statusText, { color: glucoseStatus.main }]}>{glucoseStatus.text}</Text>
+            </View>
+            
+            <Text style={styles.lastUpdate}>Qidirg'ich bilan 5 daqiqa oldin</Text>
+          </View>
 
-            {/* Chart Section */}
-            <View className="px-6 pb-6">
-              <Text className="text-sm text-muted-foreground mb-3">So'ngi 24 soat</Text>
-              
-              <View className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#0a1628' }}>
-                <LineChart
-                  data={{
-                    labels: [],
-                    datasets: [{ 
-                      data: glucoseData,
-                      color: (opacity = 1) => `rgba(52, 211, 153, ${opacity})`,
-                      strokeWidth: 3,
-                    }],
-                  }}
-                  width={screenWidth - 80}
-                  height={180}
-                  withVerticalLabels={false}
-                  withHorizontalLabels={false}
-                  withDots={false}
-                  withInnerLines={false}
-                  withOuterLines={false}
-                  withVerticalLines={false}
-                  withHorizontalLines={false}
-                  chartConfig={{
-                    backgroundColor: '#0a1628',
-                    backgroundGradientFrom: '#0a1628',
-                    backgroundGradientTo: '#0f172a',
-                    decimalPlaces: 1,
-                    color: (opacity = 1) => `rgba(52, 211, 153, ${opacity})`,
-                    style: { borderRadius: 16 },
-                    propsForBackgroundLines: {
-                      strokeWidth: 0,
-                    },
-                  }}
-                  bezier
-                  style={{
-                    paddingRight: 0,
-                    marginLeft: -15,
-                  }}
-                />
-              </View>
+          <View style={styles.chartSection}>
+            <Text style={styles.chartTitle}>So'ngi 24 soat</Text>
+            <View style={styles.chartContainer}>
+              <LineChart
+                data={{
+                  labels: [],
+                  datasets: [{
+                    data: [3.8, 4.2, 4.8, 5.3, 5.8, 6.1, 5.9, 5.5, 5.2, 5.6, 5.9, 5.8],
+                  }],
+                }}
+                width={screenWidth - 48}
+                height={180}
+                withVerticalLabels={false}
+                withHorizontalLabels={false}
+                withDots={false}
+                withInnerLines={false}
+                withOuterLines={false}
+                withShadow={false}
+                chartConfig={{
+                  backgroundGradientFrom: '#060b14',
+                  backgroundGradientTo: '#0a1220',
+                  fillShadowGradientFrom: glucoseStatus.main,
+                  fillShadowGradientFromOpacity: 0.6,
+                  fillShadowGradientTo: glucoseStatus.main,
+                  fillShadowGradientToOpacity: 0.02,
+                  color: (opacity = 1) => glucoseStatus.main,
+                  strokeWidth: 2.5,
+                  propsForBackgroundLines: { strokeWidth: 0 },
+                }}
+                bezier
+                style={{ marginLeft: 0, marginRight: 0, paddingRight: 0 }}
+              />
             </View>
           </View>
         </View>
 
-        {/* Action Cards */}
-        <View className="px-6 flex-row gap-4 mb-8">
-          {/* Insulin Card */}
-          <Pressable 
-            className="flex-1 rounded-2xl p-6 h-32 justify-between"
-            style={{ backgroundColor: '#312e81' }}
-          >
-            <View className="w-10 h-10 rounded-full bg-white/20 items-center justify-center">
-              <Text className="text-2xl">í²‰</Text>
+        <View style={styles.actionCards}>
+          <Pressable style={[styles.actionCard, { backgroundColor: '#4c1d95' }]}>
+            <View style={styles.actionIcon}>
+              <Text style={styles.actionEmoji}>ï¿½ï¿½ï¿½</Text>
             </View>
             <View>
-              <Text className="text-xl font-bold text-white mb-1">Insulin</Text>
-              <Text className="text-xs text-white/60">Kiritish</Text>
+              <Text style={styles.actionTitle}>Insulin</Text>
+              <Text style={styles.actionSubtitle}>Kiritish</Text>
             </View>
           </Pressable>
 
-          {/* Carbs Card */}
-          <Pressable 
-            className="flex-1 rounded-2xl p-6 h-32 justify-between"
-            style={{ backgroundColor: '#78350f' }}
-          >
-            <View className="w-10 h-10 rounded-full bg-white/20 items-center justify-center">
-              <Text className="text-2xl">í½ž</Text>
+          <Pressable style={[styles.actionCard, { backgroundColor: '#92400e' }]}>
+            <View style={styles.actionIcon}>
+              <Text style={styles.actionEmoji}>ï¿½ï¿½ï¿½</Text>
             </View>
             <View>
-              <Text className="text-xl font-bold text-white mb-1">Uglevod</Text>
-              <Text className="text-xs text-white/60">Qo'qatlanish</Text>
+              <Text style={styles.actionTitle}>Uglevod</Text>
+              <Text style={styles.actionSubtitle}>Qo'qatlanish</Text>
             </View>
           </Pressable>
         </View>
-
-        {/* Quick Stats */}
-        <View className="px-6 mb-8">
-          <Text className="text-base font-semibold text-white mb-4">Bugungi ko'rsatkichlar</Text>
-          
-          <View className="bg-card rounded-2xl p-4">
-            <View className="flex-row items-center justify-between mb-4 pb-4 border-b border-border">
-              <View className="flex-row items-center gap-3">
-                <View className="w-10 h-10 rounded-full bg-blue-500/20 items-center justify-center">
-                  <Ionicons name="analytics" size={20} color="#3b82f6" />
-                </View>
-                <View>
-                  <Text className="text-xs text-muted-foreground">O'rtacha</Text>
-                  <Text className="text-lg font-bold text-white">5.6 mmol/L</Text>
-                </View>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="#64748b" />
-            </View>
-
-            <View className="flex-row items-center justify-between mb-4 pb-4 border-b border-border">
-              <View className="flex-row items-center gap-3">
-                <View className="w-10 h-10 rounded-full bg-yellow-500/20 items-center justify-center">
-                  <Ionicons name="arrow-down-circle" size={20} color="#eab308" />
-                </View>
-                <View>
-                  <Text className="text-xs text-muted-foreground">Eng past</Text>
-                  <Text className="text-lg font-bold text-white">4.5 mmol/L</Text>
-                </View>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="#64748b" />
-            </View>
-
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row items-center gap-3">
-                <View className="w-10 h-10 rounded-full bg-red-500/20 items-center justify-center">
-                  <Ionicons name="arrow-up-circle" size={20} color="#ef4444" />
-                </View>
-                <View>
-                  <Text className="text-xs text-muted-foreground">Eng yuqori</Text>
-                  <Text className="text-lg font-bold text-white">6.2 mmol/L</Text>
-                </View>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="#64748b" />
-            </View>
-          </View>
-        </View>
-
-        {/* Bottom Spacing */}
-        <View className="h-8" />
       </ScrollView>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#020817',
+  },
+  header: {
+    paddingHorizontal: 24,
+    paddingTop: 48,
+    paddingBottom: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#1e3a5f',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarEmoji: {
+    fontSize: 24,
+  },
+  greeting: {
+    fontSize: 12,
+    color: '#64748b',
+  },
+  userName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#ffffff',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#1e2940',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  notificationDot: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#ef4444',
+  },
+  mainCard: {
+    marginHorizontal: 24,
+    marginBottom: 20,
+    borderRadius: 24,
+    backgroundColor: '#0b1221',
+    overflow: 'hidden',
+  },
+  glucoseSection: {
+    paddingTop: 40,
+    paddingBottom: 30,
+    alignItems: 'center',
+  },
+  glucoseValueRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  glucoseValue: {
+    fontSize: 96,
+    fontWeight: '700',
+    lineHeight: 96,
+    letterSpacing: -4,
+  },
+  glucoseUnit: {
+    fontSize: 16,
+    color: '#64748b',
+    marginBottom: 20,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  statusText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  lastUpdate: {
+    fontSize: 12,
+    color: '#475569',
+    marginTop: 12,
+  },
+  chartSection: {
+    paddingBottom: 20,
+  },
+  chartTitle: {
+    fontSize: 13,
+    color: '#64748b',
+    marginBottom: 12,
+    paddingHorizontal: 24,
+  },
+  chartContainer: {
+    backgroundColor: '#060b14',
+  },
+  actionCards: {
+    paddingHorizontal: 24,
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 24,
+  },
+  actionCard: {
+    flex: 1,
+    borderRadius: 20,
+    padding: 20,
+    minHeight: 140,
+    justifyContent: 'space-between',
+  },
+  actionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionEmoji: {
+    fontSize: 28,
+  },
+  actionTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#ffffff',
+    marginBottom: 2,
+  },
+  actionSubtitle: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.6)',
+  },
+});
