@@ -1,172 +1,430 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, StatusBar, Pressable, Dimensions } from 'react-native';
+import React from 'react';
+import { View, Text, ScrollView, Pressable, Dimensions, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LineChart } from 'react-native-chart-kit';
+import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigation } from '@react-navigation/native';
 
 const screenWidth = Dimensions.get('window').width;
 
 export default function HomeScreen() {
   const { user } = useAuth();
+  const currentGlucose = 5.8;
+  const navigation = useNavigation();
+  const getGlucoseColor = (value: number) => {
+    if (value < 3.9) return { main: '#eab308', bg: 'rgba(234, 179, 8, 0.15)', text: 'Past' };
+    if (value > 7.0) return { main: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', text: 'Yuqori' };
+    return { main: '#5eead4', bg: 'rgba(94, 234, 212, 0.15)', text: 'Normal holat' };
+  };
 
-  const [currentGlucose] = useState(5.8);
-  const [glucoseData] = useState([
-    4.5, 5.2, 5.8, 6.1, 5.9, 5.4, 5.8, 6.2, 5.7, 5.3, 5.8,
-  ]);
+  const glucoseStatus = getGlucoseColor(currentGlucose);
+  // Custom chart component matching the design
+  const CustomChart = () => {
+    const chartData = [3.8, 4.2, 4.8, 6.3, 5.8, 6.1, 5.9, 6.5, 5.2, 5.6, 5.9, 3.8];
+    const chartWidth = screenWidth - 110;
+    const chartHeight = 270;
+    const padding = 10;
+
+    const maxValue = 10;
+    const minValue = 0;
+
+    const points = chartData.map((value, index) => {
+      const x = (index / (chartData.length - 1)) * (chartWidth - padding * 2) + padding;
+      const y = chartHeight - ((value - minValue) / (maxValue - minValue)) * (chartHeight - padding * 2) - padding;
+      return { x, y };
+    });
+
+    let pathD = `M ${points[0].x} ${points[0].y}`;
+    for (let i = 1; i < points.length; i++) {
+      const prevPoint = points[i - 1];
+      const currentPoint = points[i];
+      const controlX = (prevPoint.x + currentPoint.x) / 2;
+      pathD += ` Q ${controlX} ${prevPoint.y}, ${currentPoint.x} ${currentPoint.y}`;
+    }
+
+    // Create fill path
+    const fillPath = `${pathD} L ${points[points.length - 1].x} ${chartHeight} L ${points[0].x} ${chartHeight} Z`;
+
+    return (
+      <View style={styles.chartWrapper}>
+        {/* Grid lines */}
+        <View style={styles.gridLines}>
+          <View style={styles.gridLine} />
+          <View style={styles.gridLine} />
+          <View style={styles.gridLine} />
+        </View>
+
+        {/* Y-axis labels */}
+        <View style={styles.yAxisLabels}>
+          <Text style={styles.yAxisLabel}>10.0</Text>
+          <Text style={styles.yAxisLabel}>3.9</Text>
+        </View>
+
+        <Svg width={chartWidth} height={chartHeight} style={styles.chartSvg}>
+          <Defs>
+            <LinearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <Stop offset="0%" stopColor={glucoseStatus.main} stopOpacity="0.4" />
+              <Stop offset="100%" stopColor={glucoseStatus.main} stopOpacity="0.0" />
+            </LinearGradient>
+          </Defs>
+
+          {/* Fill */}
+          <Path
+            d={fillPath}
+            fill="url(#chartGradient)"
+          />
+
+          {/* Line */}
+          <Path
+            d={pathD}
+            stroke={glucoseStatus.main}
+            strokeWidth="3"
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </Svg>
+      </View>
+    );
+  };
 
   return (
-    <View className="flex-1 bg-background">
-      <StatusBar barStyle="light-content" />
-
-      <ScrollView className="flex-1"
-       showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="always">
-        {/* ================= HEADER ================= */}
-        <View className="px-6 pt-12 pb-6 flex-row items-center justify-between">
-          <View className="flex-row items-center gap-3">
-            <View className="w-12 h-12 rounded-full bg-primary/20 items-center justify-center border-2 border-primary">
-              <Text className="text-xl">👤</Text>
+    <View style={styles.container}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <Pressable
+            onPress={() => navigation.navigate('Settings')}
+            style={styles.headerLeft}
+          >
+            <View style={styles.avatar}>
+              <Ionicons name="person" size={28} color="#64748b" />
             </View>
             <View>
-              <Text className="text-xs text-muted-foreground">Xayrli kech,</Text>
-              <Text className="text-lg font-bold text-white">
-                {user?.name || 'Azizbek'}
-              </Text>
+              <Text style={styles.greeting}>Xayrli kech,</Text>
+              <Text style={styles.userName}>{user?.name || 'Azizbek'}</Text>
             </View>
-          </View>
-
-          <View className="flex-row gap-2">
-            <Pressable
-              onPress={() => console.log('Notifications')}
-              style={({ pressed }) => ({
-                opacity: pressed ? 0.6 : 1,
-              })}
-              className="w-10 h-10 rounded-full bg-card items-center justify-center"
-            >
-              <Ionicons name="notifications-outline" size={22} color="#94a3b8" />
-              <View className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full" />
-            </Pressable>
-
-            <Pressable
-              onPress={() => console.log('Settings')}
-              style={({ pressed }) => ({
-                opacity: pressed ? 0.6 : 1,
-              })}
-              className="w-10 h-10 rounded-full bg-card items-center justify-center"
-            >
-              <Ionicons name="settings-outline" size={22} color="#94a3b8" />
+          </Pressable>
+          <View style={styles.headerRight}>
+            <Pressable style={styles.iconButton}>
+              <Ionicons name="notifications-outline" size={24} color="#64748b" />
+              <View style={styles.notificationDot} />
             </Pressable>
           </View>
         </View>
 
-        {/* ================= GLUCOSE CARD ================= */}
-        <View className="mx-6 mb-6">
-          <View className="rounded-3xl overflow-hidden" style={{ backgroundColor: '#0f172a' }}>
-            <View className="px-8 pt-12 pb-8 items-center">
-              <View className="flex-row items-baseline mb-2">
-                <Text className="text-7xl font-bold" style={{ color: '#6ee7b7' }}>
-                  {currentGlucose}
-                </Text>
-                <Ionicons
-                  name="arrow-forward"
-                  size={32}
-                  color="#6ee7b7"
-                  style={{ marginLeft: 8 }}
-                />
-              </View>
+        {/* Main Glucose Card */}
+        <View style={styles.mainCard}>
+          {/* Glucose Value Section */}
+          <View style={styles.glucoseSection}>
+            <View style={styles.glucoseValueRow}>
+              <Text style={[styles.glucoseValue, { color: glucoseStatus.main }]}>
+                5.8
+              </Text>
+              <Ionicons
+                name="arrow-forward"
+                size={36}
+                color={glucoseStatus.main}
+                style={styles.arrowIcon}
+              />
+            </View>
 
-              <Text className="text-lg text-muted-foreground mb-6">mmol/L</Text>
+            <Text style={styles.glucoseUnit}>mmol/L</Text>
 
-              <View className="flex-row items-center gap-2 px-4 py-2 rounded-full bg-green-500/20">
-                <View className="w-2 h-2 rounded-full bg-green-500" />
-                <Text className="text-sm font-medium text-green-500">
-                  Normal holatda
-                </Text>
-              </View>
-
-              <Text className="text-xs text-muted-foreground mt-4">
-                Sensor · 5 daqiqa oldin
+            <View style={[styles.statusBadge, { backgroundColor: glucoseStatus.bg, borderColor: glucoseStatus.main }]}>
+              <View style={[styles.statusDot, { backgroundColor: glucoseStatus.main }]} />
+              <Text style={[styles.statusText, { color: glucoseStatus.main }]}>
+                {glucoseStatus.text}
               </Text>
             </View>
 
-            <View className="px-6 pb-6">
-              <Text className="text-sm text-muted-foreground mb-3">
-                So‘nggi 24 soat
-              </Text>
+            <Text style={styles.lastUpdate}>Oldingi o'lchnash: 5 daqiqa oldin</Text>
+          </View>
 
-              <View pointerEvents='none' className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#0a1628' }}>
-                <LineChart
-                  data={{
-                    labels: [],
-                    datasets: [
-                      {
-                        data: glucoseData,
-                        color: (opacity = 1) =>
-                          `rgba(52, 211, 153, ${opacity})`,
-                        strokeWidth: 3,
-                      },
-                    ],
-                  }}
-                  width={screenWidth - 80}
-                  height={180}
-                  withDots={false}
-                  withInnerLines={false}
-                  withOuterLines={false}
-                  withVerticalLines={false}
-                  withHorizontalLines={false}
-                  chartConfig={{
-                    backgroundColor: '#0a1628',
-                    backgroundGradientFrom: '#0a1628',
-                    backgroundGradientTo: '#0f172a',
-                    decimalPlaces: 1,
-                    color: (opacity = 1) =>
-                      `rgba(52, 211, 153, ${opacity})`,
-                  }}
-                  bezier
-                  style={{ marginLeft: -15 }}
-                />
-              </View>
-            </View>
+          {/* Chart Section */}
+          <View style={styles.chartSection}>
+            <Text style={styles.chartTitle}>So'nggi 24 soat</Text>
+            <CustomChart />
           </View>
         </View>
 
-        {/* ================= ACTION CARDS ================= */}
-        <View className="px-6 flex-row gap-4 mb-8" style={{zIndex: 10, position: 'relative' }}>
-          <Pressable
-            hitSlop={20}
-            onPress={() => console.log('Insulin')}
-            style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1, transform:[{ scale: pressed ? 0.97 : 1 }] })}
-            className="flex-1 rounded-2xl p-6 h-32 justify-between"
-            android_ripple={{ color: 'rgba(255,255,255,0.15)' }}
-          >
-            <View className="w-10 h-10 rounded-full bg-white/20 items-center justify-center">
-              <Text className="text-2xl">💉</Text>
+        {/* Action Cards */}
+        <View style={styles.actionCards}>
+          <Pressable style={[styles.actionCard, styles.actionCardInsulin]}>
+            <View style={[styles.actionIconWrapper, styles.actionIconInsulin]}>
+              <Ionicons name="water" size={28} color="#ffffff" />
             </View>
-            <View>
-              <Text className="text-xl font-bold text-white mb-1">Insulin</Text>
-              <Text className="text-xs text-white/60">Kiritish</Text>
+            <View style={styles.actionTextContainer}>
+              <Text style={styles.actionTitle}>Insulin</Text>
+              <Text style={styles.actionSubtitle}>Kiritish</Text>
             </View>
           </Pressable>
 
-          <Pressable
-            hitSlop={20}
-            onPress={() => console.log('Carbs')}
-            style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
-            className="flex-1 rounded-2xl p-6 h-32 justify-between"
-            android_ripple={{ color: 'rgba(255,255,255,0.15)' }}
-          >
-            <View className="w-10 h-10 rounded-full bg-white/20 items-center justify-center">
-              <Text className="text-2xl">🍞</Text>
+          <Pressable style={[styles.actionCard, styles.actionCardFood]}>
+            <View style={[styles.actionIconWrapper, styles.actionIconFood]}>
+              <Ionicons name="restaurant" size={28} color="#ffffff" />
             </View>
-            <View>
-              <Text className="text-xl font-bold text-white mb-1">Uglevod</Text>
-              <Text className="text-xs text-white/60">Ovqat</Text>
+            <View style={styles.actionTextContainer}>
+              <Text style={styles.actionTitle}>Uglevod</Text>
+              <Text style={styles.actionSubtitle}>Qo'shlatish</Text>
             </View>
           </Pressable>
         </View>
 
-        <View className="h-8" />
+        <View style={styles.bottomSpacer} />
       </ScrollView>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#020817',
+  },
+  scrollContent: {
+    paddingBottom: 100,
+  },
+
+  // Header
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  avatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#1e293b',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  greeting: {
+    fontSize: 13,
+    color: '#64748b',
+    marginBottom: 2,
+  },
+  userName: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#ffffff',
+  },
+  headerRight: {
+    flexDirection: 'row',
+  },
+  iconButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#1e293b',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  notificationDot: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#ef4444',
+    borderWidth: 2,
+    borderColor: '#1e293b',
+  },
+
+  // Main Card
+  mainCard: {
+    marginHorizontal: 20,
+    marginBottom: 16,
+    borderRadius: 28,
+    backgroundColor: '#0a1628',
+    overflow: 'hidden',
+  },
+
+  // Glucose Section
+  glucoseSection: {
+    paddingTop: 48,
+    paddingBottom: 32,
+    alignItems: 'center',
+  },
+  glucoseValueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  glucoseValue: {
+    fontSize: 120,
+    fontWeight: '700',
+    lineHeight: 120,
+    letterSpacing: -6,
+  },
+  arrowIcon: {
+    marginLeft: 8,
+    marginTop: 30,
+  },
+  glucoseUnit: {
+    fontSize: 18,
+    color: '#64748b',
+    marginBottom: 24,
+    letterSpacing: 0.5,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 24,
+    borderWidth: 1,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  statusText: {
+    fontSize: 14,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+  },
+  lastUpdate: {
+    fontSize: 13,
+    color: '#475569',
+    marginTop: 16,
+  },
+
+  // Chart Section
+  chartSection: {
+    paddingBottom: 0,
+  },
+  chartTitle: {
+    fontSize: 14,
+    color: '#64748b',
+    marginBottom: 16,
+    paddingHorizontal: 20,
+  },
+  chartWrapper: {
+    height: 200,
+    position: 'relative',
+  },
+  gridLines: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    paddingHorizontal: 20,
+    justifyContent: 'space-between',
+    paddingVertical: 20,
+  },
+  gridLine: {
+    height: 1,
+    backgroundColor: '#1e293b',
+  },
+  yAxisLabels: {
+    position: 'absolute',
+    right: 28,
+    top: 20,
+    bottom: 20,
+    justifyContent: 'space-between',
+  },
+  yAxisLabel: {
+    fontSize: 11,
+    color: '#475569',
+  },
+  chartSvg: {
+    marginLeft: 0,
+  },
+
+  // Action Cards
+  actionCards: {
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    gap: 12,
+  },
+  actionCard: {
+    flex: 1,
+    borderRadius: 24,
+    padding: 24,
+    minHeight: 160,
+    justifyContent: 'space-between',
+  },
+  actionCardInsulin: {
+    backgroundColor: '#4c1d95',
+  },
+  actionCardFood: {
+    backgroundColor: '#92400e',
+  },
+  actionIconWrapper: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionIconInsulin: {
+    backgroundColor: '#6d28d9',
+  },
+  actionIconFood: {
+    backgroundColor: '#c2410c',
+  },
+  actionTextContainer: {
+    gap: 2,
+  },
+  actionTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#ffffff',
+    letterSpacing: 0.3,
+  },
+  actionSubtitle: {
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.7)',
+    letterSpacing: 0.2,
+  },
+
+  bottomSpacer: {
+    height: 20,
+  },
+
+  // Bottom Navigation
+  bottomNav: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    backgroundColor: '#0f172a',
+    paddingTop: 12,
+    paddingBottom: 28,
+    paddingHorizontal: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#1e293b',
+  },
+  navItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 6,
+  },
+  navLabel: {
+    fontSize: 11,
+    color: '#64748b',
+    fontWeight: '500',
+  },
+  navLabelActive: {
+    color: '#3b82f6',
+  },
+});

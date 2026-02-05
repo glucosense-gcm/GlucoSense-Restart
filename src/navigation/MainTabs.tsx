@@ -1,35 +1,20 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { MainTabsParamList } from '../types/navigation';
-import { View, Text, Platform } from 'react-native';
+import { View, Text } from 'react-native';
 import HomeScreen from '../screens/main/HomeScreen';
+import HistoryScreen from '../screens/main/HistoryScreen';
+import SettingsScreen from '../screens/main/SettingsScreen';
 
-const Tab = createBottomTabNavigator<MainTabsParamList>();
-
-const HistoryScreen = () => (
-  <View className="flex-1 items-center justify-center" style={{ backgroundColor: '#020617' }}>
-    <Ionicons name="time-outline" size={48} color="#3b82f6" />
-    <Text className="text-white text-xl mt-4 font-semibold">Tarix</Text>
-    <Text style={{ color: '#64748b' }} className="mt-2">Tez kunda...</Text>
-  </View>
-);
-
+const Tab = createBottomTabNavigator();
 const DeviceScreen = () => (
-  <View className="flex-1 items-center justify-center" style={{ backgroundColor: '#020617' }}>
+  <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#020817' }}>
     <Ionicons name="bluetooth-outline" size={48} color="#3b82f6" />
-    <Text className="text-white text-xl mt-4 font-semibold">Qurilma</Text>
-    <Text style={{ color: '#64748b' }} className="mt-2">Tez kunda...</Text>
+    <Text style={{ color: '#ffffff', fontSize: 20, marginTop: 16, fontWeight: '600' }}>Qurilma</Text>
+    <Text style={{ color: '#64748b', marginTop: 8 }}>Tez kunda...</Text>
   </View>
 );
 
-const SettingsScreen = () => (
-  <View className="flex-1 items-center justify-center" style={{ backgroundColor: '#020617' }}>
-    <Ionicons name="settings-outline" size={48} color="#3b82f6" />
-    <Text className="text-white text-xl mt-4 font-semibold">Sozlamalar</Text>
-    <Text style={{ color: '#64748b' }} className="mt-2">Tez kunda...</Text>
-  </View>
-);
 
 export default function MainTabs() {
   return (
@@ -37,11 +22,15 @@ export default function MainTabs() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#020617',
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: '#020817',
           borderTopColor: '#1e293b',
           borderTopWidth: 1,
-          height: Platform.OS === 'android' ? 65 : 85,
-          paddingBottom: Platform.OS === 'android' ? 10 : 25,
+          height: 70,
+          paddingBottom: 10,
           paddingTop: 10,
           elevation: 0,
           shadowOpacity: 0,
@@ -51,10 +40,6 @@ export default function MainTabs() {
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
-          marginTop: -2,
-        },
-        tabBarIconStyle: {
-          marginTop: 2,
         },
       }}
     >
@@ -63,12 +48,8 @@ export default function MainTabs() {
         component={HomeScreen}
         options={{
           tabBarLabel: 'Asosiy',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons 
-              name={focused ? 'home' : 'home-outline'} 
-              size={24} 
-              color={color} 
-            />
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'pulse' : 'pulse-outline'} size={26} color={color} />
           ),
         }}
       />
@@ -77,12 +58,8 @@ export default function MainTabs() {
         component={HistoryScreen}
         options={{
           tabBarLabel: 'Tarix',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons 
-              name={focused ? 'time' : 'time-outline'} 
-              size={24} 
-              color={color} 
-            />
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'document-text' : 'document-text-outline'} size={26} color={color} />
           ),
         }}
       />
@@ -91,12 +68,8 @@ export default function MainTabs() {
         component={DeviceScreen}
         options={{
           tabBarLabel: 'Qurilma',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons 
-              name={focused ? 'flash' : 'flash-outline'} 
-              size={24} 
-              color={color} 
-            />
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'flash' : 'flash-outline'} size={26} color={color} />
           ),
         }}
       />
@@ -105,12 +78,8 @@ export default function MainTabs() {
         component={SettingsScreen}
         options={{
           tabBarLabel: 'Sozlamalar',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons 
-              name={focused ? 'person' : 'person-outline'} 
-              size={24} 
-              color={color} 
-            />
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'options' : 'options-outline'} size={26} color={color} />
           ),
         }}
       />
