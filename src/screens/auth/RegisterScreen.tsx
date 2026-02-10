@@ -21,7 +21,9 @@ export default function HomeScreen() {
 console.log('glucoseStatus.main =', glucoseStatus.main);
   return (
     <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+       showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="always" >
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <View style={styles.avatar}>
@@ -109,7 +111,7 @@ console.log('glucoseStatus.main =', glucoseStatus.main);
         </View>
 
         <View style={styles.actionCards}>
-          <Pressable style={[styles.actionCard, { backgroundColor: '#4c1d95' }]}>
+          <Pressable hitSlop={20} style={[styles.actionCard, { backgroundColor: '#4c1d95' }]}>
             <View style={styles.actionIcon}>
               <Text style={styles.actionEmoji}>💉</Text>
             </View>
@@ -119,13 +121,13 @@ console.log('glucoseStatus.main =', glucoseStatus.main);
             </View>
           </Pressable>
 
-          <Pressable style={[styles.actionCard, { backgroundColor: '#92400e' }]}>
+          <Pressable hitSlop={20} style={[styles.actionCard, { backgroundColor: '#92400e' }]}>
             <View style={styles.actionIcon}>
               <Text style={styles.actionEmoji}>🍴</Text>
             </View>
             <View>
               <Text style={styles.actionTitle}>Uglevod</Text>
-              <Text style={styles.actionSubtitle}>Qo'qatlanish</Text>
+              <Text style={styles.actionSubtitle}>O'vqatlanish</Text>
             </View>
           </Pressable>
         </View>

@@ -1,128 +1,180 @@
 import React from 'react';
 import { View, Text, ScrollView, Pressable, Dimensions, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LineChart } from 'react-native-chart-kit';
+import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigation } from '@react-navigation/native';
 
 const screenWidth = Dimensions.get('window').width;
 
 export default function HomeScreen() {
   const { user } = useAuth();
   const currentGlucose = 5.8;
-  
+  const navigation = useNavigation();
   const getGlucoseColor = (value: number) => {
     if (value < 3.9) return { main: '#eab308', bg: 'rgba(234, 179, 8, 0.15)', text: 'Past' };
     if (value > 7.0) return { main: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', text: 'Yuqori' };
-    return { main: '#34d399', bg: 'rgba(52, 211, 153, 0.12)', text: 'Normal holat' };
+    return { main: '#5eead4', bg: 'rgba(94, 234, 212, 0.15)', text: 'Normal holat' };
   };
 
   const glucoseStatus = getGlucoseColor(currentGlucose);
+  // Custom chart component matching the design
+  const CustomChart = () => {
+    const chartData = [3.8, 4.2, 4.8, 6.3, 5.8, 6.1, 5.9, 6.5, 5.2, 5.6, 5.9, 3.8];
+    const chartWidth = screenWidth - 110;
+    const chartHeight = 270;
+    const padding = 10;
 
-  console.log('glucoseStatus.main =', glucoseStatus.main);
+    const maxValue = 10;
+    const minValue = 0;
+
+    const points = chartData.map((value, index) => {
+      const x = (index / (chartData.length - 1)) * (chartWidth - padding * 2) + padding;
+      const y = chartHeight - ((value - minValue) / (maxValue - minValue)) * (chartHeight - padding * 2) - padding;
+      return { x, y };
+    });
+
+    let pathD = `M ${points[0].x} ${points[0].y}`;
+    for (let i = 1; i < points.length; i++) {
+      const prevPoint = points[i - 1];
+      const currentPoint = points[i];
+      const controlX = (prevPoint.x + currentPoint.x) / 2;
+      pathD += ` Q ${controlX} ${prevPoint.y}, ${currentPoint.x} ${currentPoint.y}`;
+    }
+
+    // Create fill path
+    const fillPath = `${pathD} L ${points[points.length - 1].x} ${chartHeight} L ${points[0].x} ${chartHeight} Z`;
+
+    return (
+      <View style={styles.chartWrapper}>
+        {/* Grid lines */}
+        <View style={styles.gridLines}>
+          <View style={styles.gridLine} />
+          <View style={styles.gridLine} />
+          <View style={styles.gridLine} />
+        </View>
+
+        {/* Y-axis labels */}
+        <View style={styles.yAxisLabels}>
+          <Text style={styles.yAxisLabel}>10.0</Text>
+          <Text style={styles.yAxisLabel}>3.9</Text>
+        </View>
+
+        <Svg width={chartWidth} height={chartHeight} style={styles.chartSvg}>
+          <Defs>
+            <LinearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <Stop offset="0%" stopColor={glucoseStatus.main} stopOpacity="0.4" />
+              <Stop offset="100%" stopColor={glucoseStatus.main} stopOpacity="0.0" />
+            </LinearGradient>
+          </Defs>
+
+          {/* Fill */}
+          <Path
+            d={fillPath}
+            fill="url(#chartGradient)"
+          />
+
+          {/* Line */}
+          <Path
+            d={pathD}
+            stroke={glucoseStatus.main}
+            strokeWidth="3"
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </Svg>
+      </View>
+    );
+  };
 
   return (
     <View style={styles.container}>
-      <ScrollView 
+      <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={styles.scrollContent}
       >
+        {/* Header */}
         <View style={styles.header}>
-          <View style={styles.headerLeft}>
+          <Pressable
+            onPress={() => navigation.navigate('Settings')}
+            style={styles.headerLeft}
+          >
             <View style={styles.avatar}>
-              <Text style={styles.avatarEmoji}>���</Text>
+              <Ionicons name="person" size={28} color="#64748b" />
             </View>
             <View>
               <Text style={styles.greeting}>Xayrli kech,</Text>
               <Text style={styles.userName}>{user?.name || 'Azizbek'}</Text>
             </View>
-          </View>
+          </Pressable>
           <View style={styles.headerRight}>
             <Pressable style={styles.iconButton}>
-              <Ionicons name="notifications-outline" size={22} color="#8b92a8" />
+              <Ionicons name="notifications-outline" size={24} color="#64748b" />
               <View style={styles.notificationDot} />
             </Pressable>
-            <Pressable style={styles.iconButton}>
-              <Ionicons name="settings-outline" size={22} color="#8b92a8" />
-            </Pressable>
           </View>
         </View>
 
+        {/* Main Glucose Card */}
         <View style={styles.mainCard}>
+          {/* Glucose Value Section */}
           <View style={styles.glucoseSection}>
             <View style={styles.glucoseValueRow}>
-              <Text style={[styles.glucoseValue, { color: glucoseStatus.main, textShadowColor: glucoseStatus.main, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 30 }]}>
-                {currentGlucose}
+              <Text style={[styles.glucoseValue, { color: glucoseStatus.main }]}>
+                5.8
               </Text>
-              <Ionicons name="arrow-forward" size={32} color={glucoseStatus.main} style={{ marginTop: 20, marginLeft: 4 }} />
-            </View>
-            
-            <Text style={styles.glucoseUnit}>mmol/L</Text>
-            
-            <View style={[styles.statusBadge, { backgroundColor: glucoseStatus.bg }]}>
-              <View style={[styles.statusDot, { backgroundColor: glucoseStatus.main }]} />
-              <Text style={[styles.statusText, { color: glucoseStatus.main }]}>{glucoseStatus.text}</Text>
-            </View>
-            
-            <Text style={styles.lastUpdate}>Qidirg'ich bilan 5 daqiqa oldin</Text>
-          </View>
-
-          <View style={styles.chartSection}>
-            <Text style={styles.chartTitle}>So'ngi 24 soat</Text>
-            <View style={styles.chartContainer}>
-              <LineChart
-                data={{
-                  labels: [],
-                  datasets: [{
-                    data: [3.8, 4.2, 4.8, 5.3, 5.8, 6.1, 5.9, 5.5, 5.2, 5.6, 5.9, 5.8],
-                  }],
-                }}
-                width={screenWidth - 48}
-                height={180}
-                withVerticalLabels={false}
-                withHorizontalLabels={false}
-                withDots={false}
-                withInnerLines={false}
-                withOuterLines={false}
-                withShadow={false}
-                chartConfig={{
-                  backgroundGradientFrom: '#060b14',
-                  backgroundGradientTo: '#0a1220',
-                  fillShadowGradientFrom: glucoseStatus.main,
-                  fillShadowGradientFromOpacity: 0.6,
-                  fillShadowGradientTo: glucoseStatus.main,
-                  fillShadowGradientToOpacity: 0.02,
-                  color: (opacity = 1) => glucoseStatus.main,
-                  strokeWidth: 2.5,
-                  propsForBackgroundLines: { strokeWidth: 0 },
-                }}
-                bezier
-                style={{ marginLeft: 0, marginRight: 0, paddingRight: 0 }}
+              <Ionicons
+                name="arrow-forward"
+                size={36}
+                color={glucoseStatus.main}
+                style={styles.arrowIcon}
               />
             </View>
+
+            <Text style={styles.glucoseUnit}>mmol/L</Text>
+
+            <View style={[styles.statusBadge, { backgroundColor: glucoseStatus.bg, borderColor: glucoseStatus.main }]}>
+              <View style={[styles.statusDot, { backgroundColor: glucoseStatus.main }]} />
+              <Text style={[styles.statusText, { color: glucoseStatus.main }]}>
+                {glucoseStatus.text}
+              </Text>
+            </View>
+
+            <Text style={styles.lastUpdate}>Oldingi o'lchnash: 5 daqiqa oldin</Text>
+          </View>
+
+          {/* Chart Section */}
+          <View style={styles.chartSection}>
+            <Text style={styles.chartTitle}>So'nggi 24 soat</Text>
+            <CustomChart />
           </View>
         </View>
 
+        {/* Action Cards */}
         <View style={styles.actionCards}>
-          <Pressable style={[styles.actionCard, { backgroundColor: '#4c1d95' }]}>
-            <View style={styles.actionIcon}>
-              <Text style={styles.actionEmoji}>���</Text>
+          <Pressable style={[styles.actionCard, styles.actionCardInsulin]}>
+            <View style={[styles.actionIconWrapper, styles.actionIconInsulin]}>
+              <Ionicons name="water" size={28} color="#ffffff" />
             </View>
-            <View>
+            <View style={styles.actionTextContainer}>
               <Text style={styles.actionTitle}>Insulin</Text>
               <Text style={styles.actionSubtitle}>Kiritish</Text>
             </View>
           </Pressable>
 
-          <Pressable style={[styles.actionCard, { backgroundColor: '#92400e' }]}>
-            <View style={styles.actionIcon}>
-              <Text style={styles.actionEmoji}>���</Text>
+          <Pressable style={[styles.actionCard, styles.actionCardFood]}>
+            <View style={[styles.actionIconWrapper, styles.actionIconFood]}>
+              <Ionicons name="restaurant" size={28} color="#ffffff" />
             </View>
-            <View>
+            <View style={styles.actionTextContainer}>
               <Text style={styles.actionTitle}>Uglevod</Text>
-              <Text style={styles.actionSubtitle}>Qo'qatlanish</Text>
+              <Text style={styles.actionSubtitle}>Qo'shlatish</Text>
             </View>
           </Pressable>
         </View>
+
+        <View style={styles.bottomSpacer} />
       </ScrollView>
     </View>
   );
@@ -133,13 +185,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#020817',
   },
+  scrollContent: {
+    paddingBottom: 100,
+  },
+
+  // Header
   header: {
-    paddingHorizontal: 24,
-    paddingTop: 48,
-    paddingBottom: 24,
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -147,81 +204,91 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#1e3a5f',
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#1e293b',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarEmoji: {
-    fontSize: 24,
-  },
   greeting: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#64748b',
+    marginBottom: 2,
   },
   userName: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
     color: '#ffffff',
   },
   headerRight: {
     flexDirection: 'row',
-    gap: 8,
   },
   iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#1e2940',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#1e293b',
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
   },
   notificationDot: {
     position: 'absolute',
-    top: 6,
-    right: 6,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    top: 10,
+    right: 10,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     backgroundColor: '#ef4444',
+    borderWidth: 2,
+    borderColor: '#1e293b',
   },
+
+  // Main Card
   mainCard: {
-    marginHorizontal: 24,
-    marginBottom: 20,
-    borderRadius: 24,
-    backgroundColor: '#0b1221',
+    marginHorizontal: 20,
+    marginBottom: 16,
+    borderRadius: 28,
+    backgroundColor: '#0a1628',
     overflow: 'hidden',
   },
+
+  // Glucose Section
   glucoseSection: {
-    paddingTop: 40,
-    paddingBottom: 30,
+    paddingTop: 48,
+    paddingBottom: 32,
     alignItems: 'center',
   },
   glucoseValueRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 8,
+    alignItems: 'center',
+    marginBottom: 4,
   },
   glucoseValue: {
-    fontSize: 96,
+    fontSize: 120,
     fontWeight: '700',
-    lineHeight: 96,
-    letterSpacing: -4,
+    lineHeight: 120,
+    letterSpacing: -6,
+  },
+  arrowIcon: {
+    marginLeft: 8,
+    marginTop: 30,
   },
   glucoseUnit: {
-    fontSize: 16,
+    fontSize: 18,
     color: '#64748b',
-    marginBottom: 20,
+    marginBottom: 24,
+    letterSpacing: 0.5,
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 24,
+    borderWidth: 1,
   },
   statusDot: {
     width: 8,
@@ -229,58 +296,135 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   statusText: {
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: 14,
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
   lastUpdate: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#475569',
-    marginTop: 12,
+    marginTop: 16,
   },
+
+  // Chart Section
   chartSection: {
-    paddingBottom: 20,
+    paddingBottom: 0,
   },
   chartTitle: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#64748b',
-    marginBottom: 12,
-    paddingHorizontal: 24,
+    marginBottom: 16,
+    paddingHorizontal: 20,
   },
-  chartContainer: {
-    backgroundColor: '#060b14',
+  chartWrapper: {
+    height: 200,
+    position: 'relative',
   },
+  gridLines: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    paddingHorizontal: 20,
+    justifyContent: 'space-between',
+    paddingVertical: 20,
+  },
+  gridLine: {
+    height: 1,
+    backgroundColor: '#1e293b',
+  },
+  yAxisLabels: {
+    position: 'absolute',
+    right: 28,
+    top: 20,
+    bottom: 20,
+    justifyContent: 'space-between',
+  },
+  yAxisLabel: {
+    fontSize: 11,
+    color: '#475569',
+  },
+  chartSvg: {
+    marginLeft: 0,
+  },
+
+  // Action Cards
   actionCards: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 24,
   },
   actionCard: {
     flex: 1,
-    borderRadius: 20,
-    padding: 20,
-    minHeight: 140,
+    borderRadius: 24,
+    padding: 24,
+    minHeight: 160,
     justifyContent: 'space-between',
   },
-  actionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+  actionCardInsulin: {
+    backgroundColor: '#4c1d95',
+  },
+  actionCardFood: {
+    backgroundColor: '#92400e',
+  },
+  actionIconWrapper: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  actionEmoji: {
-    fontSize: 28,
+  actionIconInsulin: {
+    backgroundColor: '#6d28d9',
+  },
+  actionIconFood: {
+    backgroundColor: '#c2410c',
+  },
+  actionTextContainer: {
+    gap: 2,
   },
   actionTitle: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '700',
     color: '#ffffff',
-    marginBottom: 2,
+    letterSpacing: 0.3,
   },
   actionSubtitle: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.7)',
+    letterSpacing: 0.2,
+  },
+
+  bottomSpacer: {
+    height: 20,
+  },
+
+  // Bottom Navigation
+  bottomNav: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    backgroundColor: '#0f172a',
+    paddingTop: 12,
+    paddingBottom: 28,
+    paddingHorizontal: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#1e293b',
+  },
+  navItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 6,
+  },
+  navLabel: {
+    fontSize: 11,
+    color: '#64748b',
+    fontWeight: '500',
+  },
+  navLabelActive: {
+    color: '#3b82f6',
   },
 });
