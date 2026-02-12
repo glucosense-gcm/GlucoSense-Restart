@@ -1,22 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Pressable, Alert, Modal, PermissionsAndroid, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { BleManager, Device } from 'react-native-ble-plx';
-import ManualCodeScreen from './ManualCodeScreen';
+import { BleManager, Device, State } from 'react-native-ble-plx';
 import QRScannerScreen from './QRScannerScreen';
+import { parseGlucosePacket, GlucoseReading } from '../../utils/sibionicsProtocol';
 
 const bleManager = new BleManager();
 
+const SIBIONICS_SERVICE = '0000ff30-0000-1000-8000-00805f9b34fb';
+const SIBIONICS_NOTIFY = '0000ff31-0000-1000-8000-00805f9b34fb';
+const SIBIONICS_WRITE = '0000ff32-0000-1000-8000-00805f9b34fb';
+
 export default function DeviceScreen() {
   const [isScanning, setIsScanning] = useState(false);
-  const [showCodeInput, setShowCodeInput] = useState(false);
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [targetCode, setTargetCode] = useState<string>('');
   const [devices, setDevices] = useState<Device[]>([]);
   const [connectedDevice, setConnectedDevice] = useState<Device | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [bluetoothState, setBluetoothState] = useState<State>('Unknown');
+  const [knownDeviceId] = useState<string>('EB:F4:3F:92:87:B7');
+  const [latestReading, setLatestReading] = useState<GlucoseReading | null>(null);
 
   useEffect(() => {
+    const subscription = bleManager.onStateChange((state) => {
+      console.log('��� Bluetooth State:', state);
+      setBluetoothState(state);
+    }, true);
+
     return () => {
+      subscription.remove();
       bleManager.stopDeviceScan();
     };
   }, []);
@@ -34,70 +47,81 @@ export default function DeviceScreen() {
       );
 
       if (!allGranted) {
-        Alert.alert('Ruxsat kerak', 'Bluetooth va joylashuv ruxsatini bering');
+        Alert.alert('Ruxsat kerak', 'Bluetooth va Location ruxsati bering');
         return false;
       }
     }
     return true;
   };
 
-  const startRealScan = async () => {
+  const connectDirectly = async () => {
     const hasPermission = await requestPermissions();
     if (!hasPermission) return;
 
-    setDevices([]);
-    setIsScanning(true);
+    if (bluetoothState !== 'PoweredOn') {
+      Alert.alert('Bluetooth o\'chirilgan', 'Iltimos yoqing');
+      return;
+    }
 
-    bleManager.startDeviceScan(null, null, (error, device) => {
-      if (error) {
-        console.error('Scan error:', error);
-        setIsScanning(false);
-        Alert.alert('Xato', 'Bluetooth yoqilganligini tekshiring');
-        return;
-      }
+    setIsConnecting(true);
+    console.log('��� Direct connect to:', knownDeviceId);
 
-      if (device && device.name) {
-        console.log('Found device:', device.name, device.rssi);
-        
-        if (targetCode && !device.name.includes(targetCode)) {
-          return;
-        }
-
-        setDevices(prev => {
-          const exists = prev.find(d => d.id === device.id);
-          if (!exists) {
-            return [...prev, device];
-          }
-          return prev;
-        });
-      }
-    });
-
-    setTimeout(() => {
-      bleManager.stopDeviceScan();
-      setIsScanning(false);
-    }, 10000);
-  };
-
-  const connectToDevice = async (device: Device) => {
     try {
-      Alert.alert('Ulanmoqda', `${device.name} ga ulanmoqda...`);
+      const connected = await bleManager.connectToDevice(knownDeviceId, {
+        requestMTU: 512,
+        refreshGatt: 'OnConnected',
+        timeout: 30000
+      });
       
-      await bleManager.stopDeviceScan();
+      console.log('✅ Connected!');
       
-      const connected = await bleManager.connectToDevice(device.id);
       await connected.discoverAllServicesAndCharacteristics();
+      console.log('✅ Services discovered!');
       
       setConnectedDevice(connected);
       
-      const services = await connected.services();
-      console.log('Services:', services.map(s => s.uuid));
+      console.log('��� Subscribing to glucose data...');
       
-      Alert.alert('Muvaffaqiyat!', `${device.name} ulandi!`);
+      connected.monitorCharacteristicForService(
+        SIBIONICS_SERVICE,
+        SIBIONICS_NOTIFY,
+        (error, characteristic) => {
+          if (error) {
+            console.error('❌ Monitor error:', error.message);
+            return;
+          }
+          
+          if (characteristic?.value) {
+            console.log('\n��������� GLUCOSE DATA RECEIVED! ���������');
+            
+            const reading = parseGlucosePacket(characteristic.value);
+            
+            if (reading && reading.isValid) {
+              setLatestReading(reading);
+              console.log('��� Saved to state:', reading.glucoseMmol, 'mmol/L');
+            }
+            
+            console.log('═══════════════════════════════\n');
+          }
+        }
+      );
       
-    } catch (error) {
-      console.error('Connection error:', error);
-      Alert.alert('Xato', 'Qurilmaga ulanib bo\'lmadi');
+      Alert.alert('Ulandi! ✅', 'Sensor ulandi!\n\nData kutilmoqda...');
+      
+    } catch (error: any) {
+      console.error('❌ Connection failed:', error?.message || error);
+      
+      if (error?.message?.includes('not found')) {
+        Alert.alert(
+          'Sensor topilmadi',
+          'SugarJoy+ ni Force Stop qiling va qayta urinib ko\'ring',
+          [{ text: 'OK' }]
+        );
+      } else {
+        Alert.alert('Xato', error?.message || 'Ulanib bo\'lmadi');
+      }
+    } finally {
+      setIsConnecting(false);
     }
   };
 
@@ -106,6 +130,7 @@ export default function DeviceScreen() {
       try {
         await bleManager.cancelDeviceConnection(connectedDevice.id);
         setConnectedDevice(null);
+        setLatestReading(null);
         Alert.alert('Uzildi', 'Qurilma uzildi');
       } catch (error) {
         console.error('Disconnect error:', error);
@@ -113,26 +138,14 @@ export default function DeviceScreen() {
     }
   };
 
-  const handleCodeEntered = (code: string) => {
-    setTargetCode(code);
-    Alert.alert(
-      'Code saqlandi!',
-      `Connection Code: ${code}\n\nBluetooth qidiruv boshlaysizmi?`,
-      [
-        { text: 'Yo\'q', style: 'cancel' },
-        { text: 'Ha', onPress: startRealScan }
-      ]
-    );
-  };
-
   const handleSensorScanned = (info: { connectionCode: string }) => {
     setTargetCode(info.connectionCode);
     Alert.alert(
-      'Sensor topildi!',
-      `Connection Code: ${info.connectionCode}\n\nBluetooth qidiruv boshlaysizmi?`,
+      'Sensor topildi! ✅',
+      `Connection Code: ${info.connectionCode}\n\nUlanishni boshlaysizmi?`,
       [
         { text: 'Yo\'q', style: 'cancel' },
-        { text: 'Ha', onPress: startRealScan }
+        { text: 'Ha', onPress: connectDirectly }
       ]
     );
   };
@@ -141,13 +154,36 @@ export default function DeviceScreen() {
     <View style={{ flex: 1, backgroundColor: '#020817' }}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={{ padding: 24, paddingTop: 60 }}>
-          <Text style={{ color: '#ffffff', fontSize: 28, fontWeight: 'bold', marginBottom: 8 }}>
+          <Text style={{ color: '#ffffff', fontSize: 28, fontWeight: 'bold' }}>
             Qurilmalar
           </Text>
-          <Text style={{ color: '#64748b', fontSize: 14 }}>
-            CGM sensoringizni ulang
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: bluetoothState === 'PoweredOn' ? '#22c55e' : '#ef4444', marginRight: 6 }} />
+            <Text style={{ color: '#64748b', fontSize: 14 }}>
+              Bluetooth: {bluetoothState}
+            </Text>
+          </View>
         </View>
+
+        {latestReading && (
+          <View style={{ marginHorizontal: 24, marginBottom: 20, backgroundColor: '#1e3a5f', borderRadius: 20, padding: 24, borderLeftWidth: 4, borderLeftColor: '#10b981' }}>
+            <Text style={{ color: '#94a3b8', fontSize: 14, marginBottom: 8 }}>Oxirgi o'lchash</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+              <Text style={{ color: '#ffffff', fontSize: 48, fontWeight: 'bold' }}>
+                {latestReading.glucoseMmol.toFixed(1)}
+              </Text>
+              <Text style={{ color: '#94a3b8', fontSize: 20, marginLeft: 8 }}>
+                mmol/L
+              </Text>
+            </View>
+            <Text style={{ color: '#64748b', fontSize: 14, marginTop: 4 }}>
+              {latestReading.glucoseMgdl.toFixed(0)} mg/dL
+            </Text>
+            <Text style={{ color: '#64748b', fontSize: 12, marginTop: 8 }}>
+              {latestReading.timestamp.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}
+            </Text>
+          </View>
+        )}
 
         {connectedDevice && (
           <View style={{ marginHorizontal: 24, marginBottom: 20, backgroundColor: '#1e3a5f', borderRadius: 16, padding: 16, borderLeftWidth: 4, borderLeftColor: '#22c55e' }}>
@@ -157,12 +193,9 @@ export default function DeviceScreen() {
               </View>
               <View style={{ marginLeft: 12, flex: 1 }}>
                 <Text style={{ color: '#ffffff', fontSize: 18, fontWeight: '600' }}>
-                  {connectedDevice.name}
+                  {connectedDevice.name || 'Sibionics Sensor'}
                 </Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#22c55e', marginRight: 6 }} />
-                  <Text style={{ color: '#22c55e', fontSize: 12, fontWeight: '500' }}>Ulangan</Text>
-                </View>
+                <Text style={{ color: '#22c55e', fontSize: 12, marginTop: 4 }}>Ulangan</Text>
               </View>
             </View>
             <Pressable onPress={disconnectDevice} style={{ backgroundColor: '#ef4444', borderRadius: 12, padding: 12 }}>
@@ -171,115 +204,53 @@ export default function DeviceScreen() {
           </View>
         )}
 
-        {targetCode && (
-          <View style={{ marginHorizontal: 24, marginBottom: 20, backgroundColor: '#1e3a5f', borderRadius: 16, padding: 16, borderLeftWidth: 4, borderLeftColor: '#3b82f6' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-              <Ionicons name="checkmark-circle" size={24} color="#22c55e" />
-              <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: '600', marginLeft: 8 }}>
-                Target sensor code
-              </Text>
-            </View>
-            <Text style={{ color: '#94a3b8', fontSize: 14 }}>
-              Code: {targetCode}
-            </Text>
-          </View>
-        )}
-
-        <View style={{ paddingHorizontal: 24, marginBottom: 12, flexDirection: 'row', gap: 12 }}>
-          <Pressable
-            onPress={() => setShowQRScanner(true)}
-            style={{ flex: 1, backgroundColor: '#8b5cf6', borderRadius: 16, padding: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
-          >
-            <Ionicons name="qr-code" size={24} color="#ffffff" style={{ marginRight: 8 }} />
-            <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: '600' }}>
-              QR Scan
-            </Text>
-          </Pressable>
-
-          <Pressable
-            onPress={() => setShowCodeInput(true)}
-            style={{ flex: 1, backgroundColor: '#0ea5e9', borderRadius: 16, padding: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
-          >
-            <Ionicons name="key" size={24} color="#ffffff" style={{ marginRight: 8 }} />
-            <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: '600' }}>
-              Manual
-            </Text>
-          </Pressable>
-        </View>
-
         <View style={{ paddingHorizontal: 24, marginBottom: 12 }}>
           <Pressable
-            onPress={startRealScan}
-            disabled={isScanning}
-            style={{ backgroundColor: isScanning ? '#334155' : '#3b82f6', borderRadius: 16, padding: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
+            onPress={connectDirectly}
+            disabled={isConnecting || bluetoothState !== 'PoweredOn' || !!connectedDevice}
+            style={{ 
+              backgroundColor: isConnecting ? '#334155' : connectedDevice ? '#64748b' : '#10b981',
+              borderRadius: 16, 
+              padding: 18,
+              marginBottom: 12,
+              opacity: (isConnecting || connectedDevice) ? 0.5 : 1
+            }}
           >
-            <Ionicons name={isScanning ? 'sync' : 'search'} size={24} color="#ffffff" style={{ marginRight: 8 }} />
-            <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: '600' }}>
-              {isScanning ? 'Qidirilmoqda... (10s)' : 'Bluetooth Qidirish'}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="flash" size={24} color="#ffffff" style={{ marginRight: 8 }} />
+              <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: '600' }}>
+                {isConnecting ? 'Ulanmoqda...' : connectedDevice ? 'Ulangan' : 'Direct Connect'}
+              </Text>
+            </View>
+          </Pressable>
+
+          <Pressable
+            onPress={() => setShowQRScanner(true)}
+            style={{ backgroundColor: '#8b5cf6', borderRadius: 16, padding: 18 }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="qr-code" size={24} color="#ffffff" style={{ marginRight: 8 }} />
+              <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: '600' }}>
+                QR Scan
+              </Text>
+            </View>
           </Pressable>
         </View>
 
-        <View style={{ paddingHorizontal: 24 }}>
-          <Text style={{ color: '#ffffff', fontSize: 18, fontWeight: '600', marginBottom: 12 }}>
-            Topilgan qurilmalar ({devices.length})
-          </Text>
-
-          {devices.length === 0 && !isScanning && (
-            <View style={{ alignItems: 'center', padding: 40 }}>
-              <Ionicons name="bluetooth-outline" size={64} color="#334155" />
-              <Text style={{ color: '#64748b', fontSize: 14, marginTop: 12, textAlign: 'center' }}>
-                Qurilmalar topilmadi.{'\n'}Qidirish tugmasini bosing.
-              </Text>
-            </View>
-          )}
-
-          {devices.map((device) => (
-            <Pressable
-              key={device.id}
-              onPress={() => connectToDevice(device)}
-              style={{ backgroundColor: '#1e293b', borderRadius: 16, padding: 16, marginBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#334155', alignItems: 'center', justifyContent: 'center' }}>
-                  <Ionicons name="bluetooth-outline" size={24} color="#3b82f6" />
-                </View>
-                <View style={{ marginLeft: 12, flex: 1 }}>
-                  <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: '500' }}>
-                    {device.name || 'Unknown Device'}
-                  </Text>
-                  <Text style={{ color: '#64748b', fontSize: 12, marginTop: 2 }}>
-                    Signal: {device.rssi} dBm
-                  </Text>
-                </View>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="#64748b" />
-            </Pressable>
-          ))}
-        </View>
-
-        <View style={{ margin: 24, backgroundColor: '#1e293b', borderRadius: 16, padding: 20, borderLeftWidth: 4, borderLeftColor: '#3b82f6' }}>
+        <View style={{ margin: 24, backgroundColor: '#1e293b', borderRadius: 16, padding: 20, borderLeftWidth: 4, borderLeftColor: '#10b981' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-            <Ionicons name="information-circle" size={20} color="#3b82f6" />
+            <Ionicons name="checkmark-circle" size={20} color="#10b981" />
             <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: '600', marginLeft: 8 }}>
-              Yordam
+              Protocol Decoded! ✅
             </Text>
           </View>
           <Text style={{ color: '#94a3b8', fontSize: 13, lineHeight: 20 }}>
-            1. Sibionics sensorni yoqing{'\n'}
-            2. QR Scan yoki Manual code kiriting{'\n'}
-            3. "Bluetooth Qidirish" bosing{'\n'}
-            4. Ro'yxatdan sensorni tanlang
+            Sibionics protokol muvaffaqiyatli decode qilindi!{'\n'}
+            Formula: Bytes[6-7] (LE) / 1800 = mmol/L{'\n'}
+            Har 1 daqiqada yangi data keladi.
           </Text>
         </View>
       </ScrollView>
-
-      <Modal visible={showCodeInput} animationType="slide" transparent>
-        <ManualCodeScreen
-          onCodeEntered={handleCodeEntered}
-          onClose={() => setShowCodeInput(false)}
-        />
-      </Modal>
 
       <Modal visible={showQRScanner} animationType="slide">
         <QRScannerScreen

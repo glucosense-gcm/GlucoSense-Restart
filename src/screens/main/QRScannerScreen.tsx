@@ -19,14 +19,21 @@ export default function QRScannerScreen({ onSensorScanned, onClose }: Props) {
 
   const parseQRCode = (rawData: string): SensorInfo | null => {
     console.log('QR Data:', rawData);
-    const serialMatch = rawData.match(/21(\d{19})/);
+    
+    // FIXED: 18 characters (not 19!)
+    const serialMatch = rawData.match(/21([A-Z0-9]{18})/);
     
     if (serialMatch) {
       const serialNumber = serialMatch[1];
       const connectionCode = serialNumber.substring(6, 14);
+      
+      console.log('✅ Serial Number:', serialNumber);
+      console.log('✅ Connection Code:', connectionCode);
+      
       return { serialNumber, connectionCode };
     }
     
+    console.log('❌ No match found!');
     return null;
   };
 
@@ -38,23 +45,28 @@ export default function QRScannerScreen({ onSensorScanned, onClose }: Props) {
     
     if (sensorInfo) {
       Alert.alert(
-        'Sensor topildi!',
-        `Connection Code: ${sensorInfo.connectionCode}`,
+        'Sensor topildi! ✅',
+        `Serial: ${sensorInfo.serialNumber}\n\nConnection Code: ${sensorInfo.connectionCode}`,
         [
           {
-            text: 'OK',
+            text: 'Ulanish',
             onPress: () => {
               onSensorScanned(sensorInfo);
               onClose();
             }
+          },
+          {
+            text: 'Bekor qilish',
+            style: 'cancel',
+            onPress: () => setScanned(false)
           }
         ]
       );
     } else {
       Alert.alert(
-        'Xato',
-        'Noto\'g\'ri QR code. Sibionics sensor QR code\'ini scan qiling.',
-        [{ text: 'OK', onPress: () => setScanned(false) }]
+        'Xato ❌',
+        'Noto\'g\'ri QR code formati. Sibionics sensor QR code\'ini scan qiling.',
+        [{ text: 'Qayta urinish', onPress: () => setScanned(false) }]
       );
     }
   };
