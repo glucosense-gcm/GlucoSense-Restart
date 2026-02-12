@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import React from 'react';
 import { View, Text, Pressable, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -57,42 +56,6 @@ export default function SettingsScreen() {
       <Pressable
         onPress={handleLogout}
         style={{ backgroundColor: '#ef4444', borderRadius: 12, padding: 16, marginTop: 'auto', marginBottom: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
-=======
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-  StyleSheet,
-  Modal,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "../../context/AuthContext";
-
-export default function SettingsScreen() {
-  const { user } = useAuth();
-  const [selectedUnit, setSelectedUnit] = useState("mmol/L");
-  const [languageModalVisible, setLanguageModalVisible] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState("O'zbekcha");
-
-  const languages = [
-    { code: "uz", name: "O'zbekcha", flag: "🇺🇿" },
-    { code: "ru", name: "Русский", flag: "🇷🇺" },
-    { code: "en", name: "English", flag: "🇬🇧" },
-  ];
-
-  const handleLanguageSelect = (languages) => {
-    setSelectedLanguage(languages.name);
-    setLanguageModalVisible(false);
-  };
-
-  return (
-    <View style={styles.container}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
->>>>>>> 2e46524024af23d5a1b846860120c5ed00dfe7d6
       >
         {/* Header */}
         <Text style={styles.pageTitle}>Sozlamalar</Text>

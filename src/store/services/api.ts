@@ -7,7 +7,7 @@ import { logoutUser } from '../slices/authSlice';
 // IMPORTANT: For React Native mobile apps, use your network IP address instead of localhost
 // Run 'ifconfig' (macOS/Linux) or 'ipconfig' (Windows) to find your local IP
 // Example: const BASE_URL = 'http://192.168.1.100:5000';
-const BASE_URL = 'https://glucosense-server.onrender.com/'; // Change this for mobile testing
+const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://glucosense-server.onrender.com/'; // Change this for mobile testing
 
 const baseQuery = fetchBaseQuery({
     baseUrl: BASE_URL,

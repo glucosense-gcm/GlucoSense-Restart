@@ -1,25 +1,14 @@
 import React from 'react';
 import { View, Text, ScrollView, Pressable, Dimensions, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-<<<<<<< HEAD
 import { LineChart } from 'react-native-chart-kit';
 import { useAppSelector } from '../../store/hooks';
-=======
-import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { useAuth } from '../../context/AuthContext';
-import { useNavigation } from '@react-navigation/native';
->>>>>>> 2e46524024af23d5a1b846860120c5ed00dfe7d6
 
 const screenWidth = Dimensions.get('window').width;
 
 export default function HomeScreen() {
   const { user } = useAppSelector((state) => state.auth);
   const currentGlucose = 5.8;
-<<<<<<< HEAD
-
-=======
-  const navigation = useNavigation();
->>>>>>> 2e46524024af23d5a1b846860120c5ed00dfe7d6
   const getGlucoseColor = (value: number) => {
     if (value < 3.9) return { main: '#eab308', bg: 'rgba(234, 179, 8, 0.15)', text: 'Past' };
     if (value > 7.0) return { main: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', text: 'Yuqori' };
@@ -133,7 +122,6 @@ export default function HomeScreen() {
               <Text style={[styles.glucoseValue, { color: glucoseStatus.main }]}>
                 5.8
               </Text>
-<<<<<<< HEAD
               <Ionicons name="arrow-forward" size={32} color={glucoseStatus.main} style={{ marginTop: 20, marginLeft: 4 }} />
             </View>
 
@@ -178,13 +166,6 @@ export default function HomeScreen() {
                 }}
                 bezier
                 style={{ marginLeft: 0, marginRight: 0, paddingRight: 0 }}
-=======
-              <Ionicons
-                name="arrow-forward"
-                size={36}
-                color={glucoseStatus.main}
-                style={styles.arrowIcon}
->>>>>>> 2e46524024af23d5a1b846860120c5ed00dfe7d6
               />
             </View>
 
