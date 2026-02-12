@@ -2,15 +2,13 @@ import React from 'react';
 import { View, Text, ScrollView, Pressable, Dimensions, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { useAuth } from '../../context/AuthContext';
-import { useNavigation } from '@react-navigation/native';
+import { useAppSelector } from '../../store/hooks';
 
 const screenWidth = Dimensions.get('window').width;
 
 export default function HomeScreen() {
-  const { user } = useAuth();
+  const { user } = useAppSelector((state) => state.auth);
   const currentGlucose = 5.8;
-  const navigation = useNavigation();
   const getGlucoseColor = (value: number) => {
     if (value < 3.9) return { main: '#eab308', bg: 'rgba(234, 179, 8, 0.15)', text: 'Past' };
     if (value > 7.0) return { main: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', text: 'Yuqori' };
@@ -96,10 +94,7 @@ export default function HomeScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Pressable
-            onPress={() => navigation.navigate('Settings')}
-            style={styles.headerLeft}
-          >
+          <View style={styles.headerLeft}>
             <View style={styles.avatar}>
               <Ionicons name="person" size={28} color="#64748b" />
             </View>
@@ -107,7 +102,7 @@ export default function HomeScreen() {
               <Text style={styles.greeting}>Xayrli kech,</Text>
               <Text style={styles.userName}>{user?.name || 'Azizbek'}</Text>
             </View>
-          </Pressable>
+          </View>
           <View style={styles.headerRight}>
             <Pressable style={styles.iconButton}>
               <Ionicons name="notifications-outline" size={24} color="#64748b" />
@@ -124,24 +119,17 @@ export default function HomeScreen() {
               <Text style={[styles.glucoseValue, { color: glucoseStatus.main }]}>
                 5.8
               </Text>
-              <Ionicons
-                name="arrow-forward"
-                size={36}
-                color={glucoseStatus.main}
-                style={styles.arrowIcon}
-              />
+              <Ionicons name="arrow-forward" size={32} color={glucoseStatus.main} style={{ marginTop: 20, marginLeft: 4 }} />
             </View>
 
             <Text style={styles.glucoseUnit}>mmol/L</Text>
 
-            <View style={[styles.statusBadge, { backgroundColor: glucoseStatus.bg, borderColor: glucoseStatus.main }]}>
+            <View style={[styles.statusBadge, { backgroundColor: glucoseStatus.bg }]}>
               <View style={[styles.statusDot, { backgroundColor: glucoseStatus.main }]} />
-              <Text style={[styles.statusText, { color: glucoseStatus.main }]}>
-                {glucoseStatus.text}
-              </Text>
+              <Text style={[styles.statusText, { color: glucoseStatus.main }]}>{glucoseStatus.text}</Text>
             </View>
 
-            <Text style={styles.lastUpdate}>Oldingi o'lchnash: 5 daqiqa oldin</Text>
+            <Text style={styles.lastUpdate}>Qidirg'ich bilan 5 daqiqa oldin</Text>
           </View>
 
           {/* Chart Section */}

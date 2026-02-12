@@ -1,17 +1,12 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-  StyleSheet,
-  Modal,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "../../context/AuthContext";
+import React, { useState } from 'react';
+import { View, Text, Pressable, Alert, ScrollView, Modal, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { logoutUser } from '../../store/slices/authSlice';
 
 export default function SettingsScreen() {
-  const { user } = useAuth();
+  const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state) => state.auth);
   const [selectedUnit, setSelectedUnit] = useState("mmol/L");
   const [languageModalVisible, setLanguageModalVisible] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState("O'zbekcha");
@@ -22,9 +17,20 @@ export default function SettingsScreen() {
     { code: "en", name: "English", flag: "🇬🇧" },
   ];
 
-  const handleLanguageSelect = (languages) => {
-    setSelectedLanguage(languages.name);
+  const handleLanguageSelect = (language: typeof languages[0]) => {
+    setSelectedLanguage(language.name);
     setLanguageModalVisible(false);
+  };
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Chiqish',
+      'Hisobdan chiqmoqchimisiz?',
+      [
+        { text: 'Bekor qilish', style: 'cancel' },
+        { text: 'Chiqish', style: 'destructive', onPress: async () => { await dispatch(logoutUser()); } },
+      ]
+    );
   };
 
   return (
@@ -195,7 +201,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* Logout Button */}
-        <Pressable style={styles.logoutButton}>
+        <Pressable style={styles.logoutButton} onPress={handleLogout}>
           <Ionicons name="exit-outline" size={24} color="#ef4444" />
           <Text style={styles.logoutText}>Chiqish</Text>
         </Pressable>

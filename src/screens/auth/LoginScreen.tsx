@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, Alert, StatusBar } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, Pressable, Alert, StatusBar, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../types/navigation';
-import { useAuth } from '../../context/AuthContext';
+import { useAppDispatch } from '../../store/hooks';
+import { setCredentials } from '../../store/slices/authSlice';
+import { useSendCodeMutation, useVerifyCodeMutation, useFirebaseAuthMutation } from '../../store/services/authService';
+import { useGoogleAuth } from '../../utils/googleAuth';
 
 type LoginScreenProps = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'Login'>;
@@ -14,26 +17,40 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [code, setCode] = useState('');
   const [isCodeSent, setIsCodeSent] = useState(false);
   const [timer, setTimer] = useState(60);
-  const { login } = useAuth();
+  const dispatch = useAppDispatch();
 
-  const handleSendCode = () => {
+  const [sendCode, { isLoading: isSendingCode }] = useSendCodeMutation();
+  const [verifyCode, { isLoading: isVerifying }] = useVerifyCodeMutation();
+  const [firebaseAuth, { isLoading: isGoogleLoading }] = useFirebaseAuthMutation();
+
+  const { request, response, promptAsync } = useGoogleAuth();
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isCodeSent && timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isCodeSent, timer]);
+
+  const handleSendCode = async () => {
     if (!email || !email.includes('@')) {
       Alert.alert('Xato', 'Iltimos, togri email kiriting');
       return;
     }
-    
-    setIsCodeSent(true);
-    Alert.alert('Success', 'Kod yuborildi! Emailni tekshiring.');
-    
-    const interval = setInterval(() => {
-      setTimer((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          return 60;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+
+    try {
+      const result = await sendCode({ email }).unwrap();
+      setIsCodeSent(true);
+      setTimer(60);
+      Alert.alert('Muvaffaqiyat!', result.message || 'Kod emailga yuborildi!');
+    } catch (error: any) {
+      console.error('Send code error:', error);
+      const errorMessage = error?.data?.message || error?.message || 'Kod yuborishda xatolik';
+      Alert.alert('Xato', errorMessage);
+    }
   };
 
   const handleLogin = async () => {
@@ -41,26 +58,63 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       Alert.alert('Xato', '6-xonali kodni kiriting');
       return;
     }
-    
+
     try {
-      // TODO: Real API call here
-      // Mock login - replace with actual API
-      const mockToken = 'mock_token_' + Date.now();
-      const mockUser = {
-        id: '1',
-        email: email,
-        name: 'Test User',
-      };
-      
-      await login(mockToken, mockUser);
-      Alert.alert('Success', 'Tizimga kirildi!');
-    } catch (error) {
-      Alert.alert('Error', 'Login failed');
+      const result = await verifyCode({ email, code }).unwrap();
+
+      // Save credentials to Redux store and SecureStore
+      dispatch(setCredentials({
+        token: result.data.token,
+        user: result.data.user
+      }));
+
+      // Navigation handled automatically by RootNavigator
+    } catch (error: any) {
+      console.error('Verify code error:', error);
+      const errorMessage = error?.data?.message || error?.message || 'Kod noto\'g\'ri yoki muddati tugagan';
+      Alert.alert('Xato', errorMessage);
     }
   };
 
-  const handleGoogleLogin = () => {
-    Alert.alert('Google', 'Google login - coming soon!');
+  // Handle Google OAuth response
+  useEffect(() => {
+    if (response?.type === 'success') {
+      const { authentication } = response;
+      handleGoogleAuth(authentication?.idToken);
+    }
+  }, [response]);
+
+  const handleGoogleAuth = async (idToken: string | undefined) => {
+    if (!idToken) {
+      Alert.alert('Xato', 'Google auth muvaffaqiyatsiz');
+      return;
+    }
+
+    try {
+      const result = await firebaseAuth({
+        idToken,
+        provider: 'google'
+      }).unwrap();
+
+      // Save credentials
+      dispatch(setCredentials({
+        token: result.data.token,
+        user: result.data.user
+      }));
+    } catch (error: any) {
+      console.error('Google auth error:', error);
+      const errorMessage = error?.data?.message || error?.message || 'Google auth xatolik';
+      Alert.alert('Xato', errorMessage);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      await promptAsync();
+    } catch (error) {
+      console.error('Google login error:', error);
+      Alert.alert('Xato', 'Google login xatolik');
+    }
   };
 
   const handleAppleLogin = () => {
@@ -103,12 +157,17 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
         {!isCodeSent ? (
           <Pressable
             onPress={handleSendCode}
+            disabled={isSendingCode}
             className="bg-primary rounded-xl py-3.5 mb-6"
-            style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
+            style={({ pressed }) => ({ opacity: pressed || isSendingCode ? 0.7 : 1 })}
           >
-            <Text className="text-white font-semibold text-center">
-              Kod yuborish
-            </Text>
+            {isSendingCode ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <Text className="text-white font-semibold text-center">
+                Kod yuborish
+              </Text>
+            )}
           </Pressable>
         ) : (
           <>
@@ -128,7 +187,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                   className="flex-1 ml-3 text-white tracking-widest"
                 />
               </View>
-              
+
               <View className="flex-row items-center justify-between mt-2">
                 <Text className="text-xs text-muted-foreground">
                   Kod emailga yuborildi
@@ -149,12 +208,17 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
             <Pressable
               onPress={handleLogin}
+              disabled={isVerifying}
               className="bg-primary rounded-xl py-3.5 mb-6"
-              style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
+              style={({ pressed }) => ({ opacity: pressed || isVerifying ? 0.7 : 1 })}
             >
-              <Text className="text-white font-semibold text-center">
-                Kirish
-              </Text>
+              {isVerifying ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <Text className="text-white font-semibold text-center">
+                  Kirish
+                </Text>
+              )}
             </Pressable>
           </>
         )}

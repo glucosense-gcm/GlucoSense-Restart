@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../types/navigation';
-import { useAuth } from '../context/AuthContext';
+// import { useAuth } from '../context/AuthContext';
 
 interface Language {
   code: string;
@@ -25,13 +25,13 @@ type LanguageScreenProps = {
 
 export default function LanguageScreen({ navigation }: LanguageScreenProps) {
   const [selectedLanguage, setSelectedLanguage] = useState<string>('uz');
-  const { setLanguageSelected } = useAuth();
+  // const { setLanguageSelected } = useAuth(); // Removed context usage
 
   const handleContinue = async () => {
     try {
       await AsyncStorage.setItem('@app_language', selectedLanguage);
-      await setLanguageSelected();
-      
+      // await setLanguageSelected(); // Removed context usage
+
       // Navigate to Login screen
       navigation.replace('Login');
     } catch (error) {
@@ -69,11 +69,10 @@ export default function LanguageScreen({ navigation }: LanguageScreenProps) {
             <Pressable
               key={language.code}
               onPress={() => setSelectedLanguage(language.code)}
-              className={`p-4 flex-row items-center gap-4 rounded-2xl border-2 ${
-                selectedLanguage === language.code
-                  ? 'bg-primary/10 border-primary'
-                  : 'bg-card border-border/50'
-              }`}
+              className={`p-4 flex-row items-center gap-4 rounded-2xl border-2 ${selectedLanguage === language.code
+                ? 'bg-primary/10 border-primary'
+                : 'bg-card border-border/50'
+                }`}
               style={({ pressed }) => ({
                 opacity: pressed ? 0.7 : 1,
               })}
@@ -83,9 +82,8 @@ export default function LanguageScreen({ navigation }: LanguageScreenProps) {
               </View>
 
               <View className="flex-1">
-                <Text className={`text-lg font-medium ${
-                  selectedLanguage === language.code ? 'text-foreground' : 'text-muted-foreground'
-                }`}>
+                <Text className={`text-lg font-medium ${selectedLanguage === language.code ? 'text-foreground' : 'text-muted-foreground'
+                  }`}>
                   {language.name}
                 </Text>
                 {selectedLanguage === language.code && (
