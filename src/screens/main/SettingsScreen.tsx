@@ -1,10 +1,12 @@
 import React from 'react';
 import { View, Text, Pressable, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../context/AuthContext';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { logoutUser } from '../../store/slices/authSlice';
 
 export default function SettingsScreen() {
-  const { user, logout } = useAuth();
+  const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state) => state.auth);
 
   const handleLogout = () => {
     Alert.alert(
@@ -12,7 +14,7 @@ export default function SettingsScreen() {
       'Hisobdan chiqmoqchimisiz?',
       [
         { text: 'Bekor qilish', style: 'cancel' },
-        { text: 'Chiqish', style: 'destructive', onPress: async () => { await logout(); } },
+        { text: 'Chiqish', style: 'destructive', onPress: async () => { await dispatch(logoutUser()); } },
       ]
     );
   };
@@ -51,7 +53,7 @@ export default function SettingsScreen() {
         <Ionicons name="chevron-forward" size={20} color="#64748b" />
       </Pressable>
 
-      <Pressable 
+      <Pressable
         onPress={handleLogout}
         style={{ backgroundColor: '#ef4444', borderRadius: 12, padding: 16, marginTop: 'auto', marginBottom: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
       >

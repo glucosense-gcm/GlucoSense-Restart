@@ -2,14 +2,14 @@ import React from 'react';
 import { View, Text, ScrollView, Pressable, Dimensions, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LineChart } from 'react-native-chart-kit';
-import { useAuth } from '../../context/AuthContext';
+import { useAppSelector } from '../../store/hooks';
 
 const screenWidth = Dimensions.get('window').width;
 
 export default function HomeScreen() {
-  const { user } = useAuth();
+  const { user } = useAppSelector((state) => state.auth);
   const currentGlucose = 5.8;
-  
+
   const getGlucoseColor = (value: number) => {
     if (value < 3.9) return { main: '#eab308', bg: 'rgba(234, 179, 8, 0.15)', text: 'Past' };
     if (value > 7.0) return { main: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', text: 'Yuqori' };
@@ -22,7 +22,7 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView 
+      <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
       >
@@ -55,14 +55,14 @@ export default function HomeScreen() {
               </Text>
               <Ionicons name="arrow-forward" size={32} color={glucoseStatus.main} style={{ marginTop: 20, marginLeft: 4 }} />
             </View>
-            
+
             <Text style={styles.glucoseUnit}>mmol/L</Text>
-            
+
             <View style={[styles.statusBadge, { backgroundColor: glucoseStatus.bg }]}>
               <View style={[styles.statusDot, { backgroundColor: glucoseStatus.main }]} />
               <Text style={[styles.statusText, { color: glucoseStatus.main }]}>{glucoseStatus.text}</Text>
             </View>
-            
+
             <Text style={styles.lastUpdate}>Qidirg'ich bilan 5 daqiqa oldin</Text>
           </View>
 

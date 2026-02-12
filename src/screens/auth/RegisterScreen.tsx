@@ -1,138 +1,153 @@
-import React from 'react';
-import { View, Text, ScrollView, Pressable, Dimensions, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { LineChart } from 'react-native-chart-kit';
-import { useAuth } from '../../context/AuthContext';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  ScrollView,
+  Alert,
+  ActivityIndicator,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
+import { useRegisterMutation } from '../../store/services/authService';
 
-const screenWidth = Dimensions.get('window').width;
+export default function RegisterScreen({ navigation }: any) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [register, { isLoading }] = useRegisterMutation();
 
-export default function HomeScreen() {
-  const { user } = useAuth();
-  const currentGlucose = 5.8;
-  
-  const getGlucoseColor = (value: number) => {
-    if (value < 3.9) return { main: '#eab308', bg: 'rgba(234, 179, 8, 0.15)', text: 'Past' };
-    if (value > 7.0) return { main: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', text: 'Yuqori' };
-    return { main: '#34d399', bg: 'rgba(52, 211, 153, 0.12)', text: 'Normal holat' };
+  const validateForm = () => {
+    if (!email.trim()) {
+      Alert.alert('Ошибка', 'Введите email');
+      return false;
+    }
+    if (!email.includes('@')) {
+      Alert.alert('Ошибка', 'Введите корректный email');
+      return false;
+    }
+    if (!password.trim()) {
+      Alert.alert('Ошибка', 'Введите пароль');
+      return false;
+    }
+    if (password.length < 6) {
+      Alert.alert('Ошибка', 'Пароль должен быть минимум 6 символов');
+      return false;
+    }
+    if (!name.trim()) {
+      Alert.alert('Ошибка', 'Введите имя');
+      return false;
+    }
+    return true;
   };
 
- const glucoseStatus = getGlucoseColor(currentGlucose);
+  const handleRegister = async () => {
+    if (!validateForm()) return;
 
-console.log('glucoseStatus.main =', glucoseStatus.main);
+    try {
+      const result = await register({
+        email: email.trim(),
+        password,
+        name: name.trim(),
+        language: 'ru',
+      }).unwrap();
+
+      Alert.alert('Успешно!', 'Регистрация прошла успешно. Теперь войдите.', [
+        { text: 'OK', onPress: () => navigation.navigate('Login') },
+      ]);
+    } catch (error: any) {
+      console.error('Register error:', error);
+      const errorMessage =
+        error?.data?.message || error?.message || 'Ошибка регистрации';
+      Alert.alert('Ошибка', errorMessage);
+    }
+  };
+
   return (
-    <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarEmoji}>👤</Text>
-            </View>
-            <View>
-              <Text style={styles.greeting}>Xayrli kech,</Text>
-              <Text style={styles.userName}>{user?.name || 'Azizbek'}</Text>
-            </View>
-          </View>
-          <View style={styles.headerRight}>
-            <Pressable style={styles.iconButton}>
-              <Ionicons name="notifications-outline" size={22} color="#8b92a8" />
-              <View style={styles.notificationDot} />
-            </Pressable>
-            <Pressable style={styles.iconButton}>
-              <Ionicons name="settings-outline" size={22} color="#8b92a8" />
-            </Pressable>
-          </View>
-        </View>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.formContainer}>
+          <Text style={styles.title}>Регистрация</Text>
+          <Text style={styles.subtitle}>Создайте аккаунт GlucoSense</Text>
 
-        <View style={styles.mainCard}>
-          <View style={styles.glucoseSection}>
-            <View style={styles.glucoseValueRow}>
-                <Text
-                    style={[
-                        styles.glucoseValue,
-                        {
-                        color: glucoseStatus.main,
-                        textShadowColor: glucoseStatus.main,
-                        textShadowOffset: { width: 0, height: 0 },
-                        textShadowRadius: 30,
-                        },
-                    ]}
-                    >
-                    {currentGlucose}
-                </Text>
-              <Ionicons name="arrow-forward" size={32} color={glucoseStatus.main} style={{ marginTop: 20, marginLeft: 4 }} />
-            </View>
-            
-            <Text style={styles.glucoseUnit}>mmol/L</Text>
-            
-            <View style={[styles.statusBadge, { backgroundColor: glucoseStatus.bg }]}>
-              <View style={[styles.statusDot, { backgroundColor: glucoseStatus.main }]} />
-              <Text style={[styles.statusText, { color: glucoseStatus.main }]}>{glucoseStatus.text}</Text>
-            </View>
-            
-            <Text style={styles.lastUpdate}>Qidirg'ich bilan 5 daqiqa oldin</Text>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Имя</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Введите ваше имя"
+              placeholderTextColor="#64748b"
+              value={name}
+              onChangeText={setName}
+              autoCapitalize="words"
+              editable={!isLoading}
+            />
           </View>
 
-          <View style={styles.chartSection}>
-            <Text style={styles.chartTitle}>So'ngi 24 soat</Text>
-            <View style={styles.chartContainer}>
-              <LineChart
-                data={{
-                  labels: [],
-                  datasets: [{
-                    data: [3.8, 4.2, 4.8, 5.3, 5.8, 6.1, 5.9, 5.5, 5.2, 5.6, 5.9, 5.8],
-                  }],
-                }}
-                width={screenWidth - 48}
-                height={180}
-                withVerticalLabels={false}
-                withHorizontalLabels={false}
-                withDots={false}
-                withInnerLines={false}
-                withOuterLines={false}
-                withShadow={false}
-                chartConfig={{
-                  backgroundGradientFrom: '#060b14',
-                  backgroundGradientTo: '#0a1220',
-                  fillShadowGradientFrom: glucoseStatus.main,
-                  fillShadowGradientFromOpacity: 0.6,
-                  fillShadowGradientTo: glucoseStatus.main,
-                  fillShadowGradientToOpacity: 0.02,
-                  color: (opacity = 1) => glucoseStatus.main,
-                  strokeWidth: 2.5,
-                  propsForBackgroundLines: { strokeWidth: 0 },
-                }}
-                bezier
-                style={{ marginLeft: 0, marginRight: 0, paddingRight: 0 }}
-              />
-            </View>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Email</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="you@example.com"
+              placeholderTextColor="#64748b"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              autoComplete="email"
+              editable={!isLoading}
+            />
           </View>
-        </View>
 
-        <View style={styles.actionCards}>
-          <Pressable style={[styles.actionCard, { backgroundColor: '#4c1d95' }]}>
-            <View style={styles.actionIcon}>
-              <Text style={styles.actionEmoji}>💉</Text>
-            </View>
-            <View>
-              <Text style={styles.actionTitle}>Insulin</Text>
-              <Text style={styles.actionSubtitle}>Kiritish</Text>
-            </View>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Пароль</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Минимум 6 символов"
+              placeholderTextColor="#64748b"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              editable={!isLoading}
+            />
+          </View>
+
+          <Pressable
+            onPress={handleRegister}
+            style={({ pressed }) => [
+              styles.button,
+              isLoading && styles.buttonDisabled,
+              pressed && styles.buttonPressed,
+            ]}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <Text style={styles.buttonText}>Зарегистрироваться</Text>
+            )}
           </Pressable>
 
-          <Pressable style={[styles.actionCard, { backgroundColor: '#92400e' }]}>
-            <View style={styles.actionIcon}>
-              <Text style={styles.actionEmoji}>🍴</Text>
-            </View>
-            <View>
-              <Text style={styles.actionTitle}>Uglevod</Text>
-              <Text style={styles.actionSubtitle}>Qo'qatlanish</Text>
-            </View>
+          <Pressable
+            onPress={() => navigation.navigate('Login')}
+            style={styles.link}
+            disabled={isLoading}
+          >
+            <Text style={styles.linkText}>
+              Уже есть аккаунт? <Text style={styles.linkTextBold}>Войти</Text>
+            </Text>
           </Pressable>
         </View>
-
-        <View style={{ height: 100 }} />
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -141,154 +156,81 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#020817',
   },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 48,
-    paddingBottom: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#1e3a5f',
-    alignItems: 'center',
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
+    padding: 20,
   },
-  avatarEmoji: {
-    fontSize: 24,
+  formContainer: {
+    width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center',
   },
-  greeting: {
-    fontSize: 12,
-    color: '#64748b',
-  },
-  userName: {
-    fontSize: 16,
-    fontWeight: '700',
+  title: {
     color: '#ffffff',
+    fontSize: 32,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textAlign: 'center',
   },
-  headerRight: {
-    flexDirection: 'row',
-    gap: 8,
+  subtitle: {
+    color: '#94a3b8',
+    fontSize: 16,
+    marginBottom: 32,
+    textAlign: 'center',
   },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#1e2940',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  notificationDot: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#ef4444',
-  },
-  mainCard: {
-    marginHorizontal: 24,
+  inputContainer: {
     marginBottom: 20,
-    borderRadius: 24,
-    backgroundColor: '#0b1221',
-    overflow: 'hidden',
   },
-  glucoseSection: {
-    paddingTop: 40,
-    paddingBottom: 30,
-    alignItems: 'center',
-  },
-  glucoseValueRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+  label: {
+    color: '#e2e8f0',
+    fontSize: 14,
+    fontWeight: '600',
     marginBottom: 8,
   },
-  glucoseValue: {
-    fontSize: 96,
-    fontWeight: '700',
-    lineHeight: 96,
-    letterSpacing: -4,
-  },
-  glucoseUnit: {
-    fontSize: 16,
-    color: '#64748b',
-    marginBottom: 20,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  statusText: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  lastUpdate: {
-    fontSize: 12,
-    color: '#475569',
-    marginTop: 12,
-  },
-  chartSection: {
-    paddingBottom: 20,
-  },
-  chartTitle: {
-    fontSize: 13,
-    color: '#64748b',
-    marginBottom: 12,
-    paddingHorizontal: 24,
-  },
-  chartContainer: {
-    backgroundColor: '#060b14',
-  },
-  actionCards: {
-    paddingHorizontal: 24,
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 24,
-  },
-  actionCard: {
-    flex: 1,
-    borderRadius: 20,
-    padding: 20,
-    minHeight: 140,
-    justifyContent: 'space-between',
-  },
-  actionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionEmoji: {
-    fontSize: 28,
-  },
-  actionTitle: {
-    fontSize: 22,
-    fontWeight: '700',
+  input: {
+    backgroundColor: '#1e293b',
+    borderWidth: 1,
+    borderColor: '#334155',
+    borderRadius: 12,
+    padding: 16,
     color: '#ffffff',
-    marginBottom: 2,
+    fontSize: 16,
   },
-  actionSubtitle: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.6)',
+  button: {
+    backgroundColor: '#3b82f6',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 8,
+    shadowColor: '#3b82f6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  buttonPressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.98 }],
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  buttonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  link: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  linkText: {
+    color: '#94a3b8',
+    fontSize: 14,
+  },
+  linkTextBold: {
+    color: '#3b82f6',
+    fontWeight: '600',
   },
 });
