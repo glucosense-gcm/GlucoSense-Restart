@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, ScrollView, Pressable, Dimensions, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LineChart } from 'react-native-chart-kit';
+import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useAppSelector } from '../../store/hooks';
 
 const screenWidth = Dimensions.get('window').width;
@@ -94,10 +94,7 @@ export default function HomeScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Pressable
-            onPress={() => navigation.navigate('Settings')}
-            style={styles.headerLeft}
-          >
+          <View style={styles.headerLeft}>
             <View style={styles.avatar}>
               <Ionicons name="person" size={28} color="#64748b" />
             </View>
@@ -105,7 +102,7 @@ export default function HomeScreen() {
               <Text style={styles.greeting}>Xayrli kech,</Text>
               <Text style={styles.userName}>{user?.name || 'Azizbek'}</Text>
             </View>
-          </Pressable>
+          </View>
           <View style={styles.headerRight}>
             <Pressable style={styles.iconButton}>
               <Ionicons name="notifications-outline" size={24} color="#64748b" />
@@ -133,52 +130,6 @@ export default function HomeScreen() {
             </View>
 
             <Text style={styles.lastUpdate}>Qidirg'ich bilan 5 daqiqa oldin</Text>
-          </View>
-
-          <View style={styles.chartSection}>
-            <Text style={styles.chartTitle}>So'ngi 24 soat</Text>
-            <View style={styles.chartContainer}>
-              <LineChart
-                data={{
-                  labels: [],
-                  datasets: [{
-                    data: [3.8, 4.2, 4.8, 5.3, 5.8, 6.1, 5.9, 5.5, 5.2, 5.6, 5.9, 5.8],
-                  }],
-                }}
-                width={screenWidth - 48}
-                height={180}
-                withVerticalLabels={false}
-                withHorizontalLabels={false}
-                withDots={false}
-                withInnerLines={false}
-                withOuterLines={false}
-                withShadow={false}
-                chartConfig={{
-                  backgroundGradientFrom: '#060b14',
-                  backgroundGradientTo: '#0a1220',
-                  fillShadowGradientFrom: glucoseStatus.main,
-                  fillShadowGradientFromOpacity: 0.6,
-                  fillShadowGradientTo: glucoseStatus.main,
-                  fillShadowGradientToOpacity: 0.02,
-                  color: (opacity = 1) => glucoseStatus.main,
-                  strokeWidth: 2.5,
-                  propsForBackgroundLines: { strokeWidth: 0 },
-                }}
-                bezier
-                style={{ marginLeft: 0, marginRight: 0, paddingRight: 0 }}
-              />
-            </View>
-
-            <Text style={styles.glucoseUnit}>mmol/L</Text>
-
-            <View style={[styles.statusBadge, { backgroundColor: glucoseStatus.bg, borderColor: glucoseStatus.main }]}>
-              <View style={[styles.statusDot, { backgroundColor: glucoseStatus.main }]} />
-              <Text style={[styles.statusText, { color: glucoseStatus.main }]}>
-                {glucoseStatus.text}
-              </Text>
-            </View>
-
-            <Text style={styles.lastUpdate}>Oldingi o'lchnash: 5 daqiqa oldin</Text>
           </View>
 
           {/* Chart Section */}

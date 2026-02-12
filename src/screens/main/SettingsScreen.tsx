@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, Pressable, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Pressable, Alert, ScrollView, Modal, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { logoutUser } from '../../store/slices/authSlice';
@@ -7,6 +7,20 @@ import { logoutUser } from '../../store/slices/authSlice';
 export default function SettingsScreen() {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
+  const [selectedUnit, setSelectedUnit] = useState("mmol/L");
+  const [languageModalVisible, setLanguageModalVisible] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState("O'zbekcha");
+
+  const languages = [
+    { code: "uz", name: "O'zbekcha", flag: "🇺🇿" },
+    { code: "ru", name: "Русский", flag: "🇷🇺" },
+    { code: "en", name: "English", flag: "🇬🇧" },
+  ];
+
+  const handleLanguageSelect = (language: typeof languages[0]) => {
+    setSelectedLanguage(language.name);
+    setLanguageModalVisible(false);
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -20,42 +34,10 @@ export default function SettingsScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#020817', padding: 24 }}>
-      <Text style={{ color: '#ffffff', fontSize: 24, fontWeight: 'bold', marginTop: 40, marginBottom: 20 }}>
-        Sozlamalar
-      </Text>
-
-      <View style={{ backgroundColor: '#1e293b', borderRadius: 16, padding: 20, marginBottom: 20 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: '#3b82f6', alignItems: 'center', justifyContent: 'center' }}>
-            <Ionicons name="person" size={32} color="#ffffff" />
-          </View>
-          <View style={{ marginLeft: 16 }}>
-            <Text style={{ color: '#ffffff', fontSize: 18, fontWeight: '600' }}>{user?.name || 'User'}</Text>
-            <Text style={{ color: '#64748b', fontSize: 14 }}>{user?.email || 'email@example.com'}</Text>
-          </View>
-        </View>
-      </View>
-
-      <Pressable style={{ backgroundColor: '#1e293b', borderRadius: 12, padding: 16, marginBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Ionicons name="language-outline" size={24} color="#3b82f6" />
-          <Text style={{ color: '#ffffff', fontSize: 16, marginLeft: 12 }}>Til / Language</Text>
-        </View>
-        <Ionicons name="chevron-forward" size={20} color="#64748b" />
-      </Pressable>
-
-      <Pressable style={{ backgroundColor: '#1e293b', borderRadius: 12, padding: 16, marginBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Ionicons name="notifications-outline" size={24} color="#3b82f6" />
-          <Text style={{ color: '#ffffff', fontSize: 16, marginLeft: 12 }}>Bildirishnomalar</Text>
-        </View>
-        <Ionicons name="chevron-forward" size={20} color="#64748b" />
-      </Pressable>
-
-      <Pressable
-        onPress={handleLogout}
-        style={{ backgroundColor: '#ef4444', borderRadius: 12, padding: 16, marginTop: 'auto', marginBottom: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
+    <View style={styles.container}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
       >
         {/* Header */}
         <Text style={styles.pageTitle}>Sozlamalar</Text>
@@ -219,7 +201,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* Logout Button */}
-        <Pressable style={styles.logoutButton}>
+        <Pressable style={styles.logoutButton} onPress={handleLogout}>
           <Ionicons name="exit-outline" size={24} color="#ef4444" />
           <Text style={styles.logoutText}>Chiqish</Text>
         </Pressable>
