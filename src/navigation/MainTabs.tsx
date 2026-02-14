@@ -5,10 +5,13 @@ import HomeScreen from '../screens/main/HomeScreen';
 import HistoryScreen from '../screens/main/HistoryScreen';
 import DeviceScreen from '../screens/main/DeviceScreen';
 import SettingsScreen from '../screens/main/SettingsScreen';
+import { useTranslation } from '.././i18n/useTranslation';
 
 const Tab = createBottomTabNavigator();
 
 export default function MainTabs() {
+  const { t } = useTranslation();
+
   return (
     <Tab.Navigator
       screenOptions={{
@@ -39,7 +42,7 @@ export default function MainTabs() {
         name="Home"
         component={HomeScreen}
         options={{
-          tabBarLabel: 'Asosiy',
+          tabBarLabel: t('navbar.home'),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'pulse' : 'pulse-outline'} size={26} color={color} />
           ),
@@ -49,7 +52,7 @@ export default function MainTabs() {
         name="History"
         component={HistoryScreen}
         options={{
-          tabBarLabel: 'Tarix',
+          tabBarLabel: t('navbar.history'),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'document-text' : 'document-text-outline'} size={26} color={color} />
           ),
@@ -59,7 +62,7 @@ export default function MainTabs() {
         name="Device"
         component={DeviceScreen}
         options={{
-          tabBarLabel: 'Qurilma',
+          tabBarLabel: t('navbar.device'),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'flash' : 'flash-outline'} size={26} color={color} />
           ),
@@ -69,7 +72,7 @@ export default function MainTabs() {
         name="Settings"
         component={SettingsScreen}
         options={{
-          tabBarLabel: 'Sozlamalar',
+          tabBarLabel: t('navbar.settings'),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'options' : 'options-outline'} size={26} color={color} />
           ),

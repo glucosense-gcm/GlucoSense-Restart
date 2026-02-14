@@ -5,16 +5,18 @@ import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 
+import { useTranslation } from '../../i18n/useTranslation';
 const screenWidth = Dimensions.get('window').width;
 
 export default function HomeScreen() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const currentGlucose = 5.8;
   const navigation = useNavigation();
   const getGlucoseColor = (value: number) => {
-    if (value < 3.9) return { main: '#eab308', bg: 'rgba(234, 179, 8, 0.15)', text: 'Past' };
-    if (value > 7.0) return { main: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', text: 'Yuqori' };
-    return { main: '#5eead4', bg: 'rgba(94, 234, 212, 0.15)', text: 'Normal holat' };
+    if (value < 3.9) return { main: '#eab308', bg: 'rgba(234, 179, 8, 0.15)', text: t('home.low') };
+    if (value > 7.0) return { main: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', text: t('home.high') };
+    return { main: '#5eead4', bg: 'rgba(94, 234, 212, 0.15)', text: t('home.normal') };
   };
 
   const glucoseStatus = getGlucoseColor(currentGlucose);
@@ -104,8 +106,8 @@ export default function HomeScreen() {
               <Ionicons name="person" size={28} color="#64748b" />
             </View>
             <View>
-              <Text style={styles.greeting}>Xayrli kech,</Text>
-              <Text style={styles.userName}>{user?.name || 'Azizbek'}</Text>
+              <Text style={styles.greeting}>{t('home.greeting')},</Text>
+              <Text style={styles.userName}>{user?.name || 'User'}</Text>
             </View>
           </Pressable>
           <View style={styles.headerRight}>
@@ -141,12 +143,12 @@ export default function HomeScreen() {
               </Text>
             </View>
 
-            <Text style={styles.lastUpdate}>Oldingi o'lchnash: 5 daqiqa oldin</Text>
+            <Text style={styles.lastUpdate}>{t('home.lastReading')}: 5 min</Text>
           </View>
 
           {/* Chart Section */}
           <View style={styles.chartSection}>
-            <Text style={styles.chartTitle}>So'nggi 24 soat</Text>
+            <Text style={styles.chartTitle}>{t('history.today')}</Text>
             <CustomChart />
           </View>
         </View>
@@ -159,7 +161,7 @@ export default function HomeScreen() {
             </View>
             <View style={styles.actionTextContainer}>
               <Text style={styles.actionTitle}>Insulin</Text>
-              <Text style={styles.actionSubtitle}>Kiritish</Text>
+              <Text style={styles.actionSubtitle}>{t('common.submit')}</Text>
             </View>
           </Pressable>
 
@@ -168,8 +170,8 @@ export default function HomeScreen() {
               <Ionicons name="restaurant" size={28} color="#ffffff" />
             </View>
             <View style={styles.actionTextContainer}>
-              <Text style={styles.actionTitle}>Uglevod</Text>
-              <Text style={styles.actionSubtitle}>Qo'shlatish</Text>
+              <Text style={styles.actionTitle}>Food</Text>
+              <Text style={styles.actionSubtitle}>{t('common.submit')}</Text>
             </View>
           </Pressable>
         </View>

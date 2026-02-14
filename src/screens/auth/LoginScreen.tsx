@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../types/navigation';
 import { useAuth } from '../../context/AuthContext';
+import { useTranslation } from '../../i18n/useTranslation';
 
 type LoginScreenProps = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'Login'>;
@@ -15,16 +16,17 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [isCodeSent, setIsCodeSent] = useState(false);
   const [timer, setTimer] = useState(60);
   const { login } = useAuth();
+  const { t } = useTranslation();
 
   const handleSendCode = () => {
     if (!email || !email.includes('@')) {
-      Alert.alert('Xato', 'Iltimos, togri email kiriting');
+      Alert.alert(t('common.error'), t('login.errorInvalidEmail'));
       return;
     }
-    
+
     setIsCodeSent(true);
-    Alert.alert('Success', 'Kod yuborildi! Emailni tekshiring.');
-    
+    Alert.alert(t('common.success'), t('login.successCodeSent'));
+
     const interval = setInterval(() => {
       setTimer((prev) => {
         if (prev <= 1) {
@@ -38,10 +40,10 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
   const handleLogin = async () => {
     if (!code || code.length !== 6) {
-      Alert.alert('Xato', '6-xonali kodni kiriting');
+      Alert.alert(t('common.error'), t('login.errorInvalidCode'));
       return;
     }
-    
+
     try {
       // TODO: Real API call here
       // Mock login - replace with actual API
@@ -51,20 +53,20 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
         email: email,
         name: 'Test User',
       };
-      
+
       await login(mockToken, mockUser);
-      Alert.alert('Success', 'Tizimga kirildi!');
+      Alert.alert(t('common.success'), t('login.successLogin'));
     } catch (error) {
-      Alert.alert('Error', 'Login failed');
+      Alert.alert(t('common.error'), 'Login failed');
     }
   };
 
   const handleGoogleLogin = () => {
-    Alert.alert('Google', 'Google login - coming soon!');
+    Alert.alert('Google', t('alerts.featureComingSoon'));
   };
 
   const handleAppleLogin = () => {
-    Alert.alert('Apple', 'Apple login - coming soon!');
+    Alert.alert('Apple', t('alerts.featureComingSoon'));
   };
 
   return (
@@ -75,23 +77,23 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
             <Text className="text-4xl">💧</Text>
           </View>
           <Text className="text-2xl font-bold text-white mb-1">
-            Xush kelibsiz!
+            {t('login.welcome')}
           </Text>
           <Text className="text-sm text-muted-foreground">
-            Tizimga kirish uchun email kiriting
+            {t('login.subtitle')}
           </Text>
         </View>
 
         <View className="mb-4">
           <Text className="text-sm font-medium text-foreground mb-2">
-            Email
+            {t('login.email')}
           </Text>
           <View className="flex-row items-center bg-card border border-border rounded-xl px-4 py-3">
             <Ionicons name="mail-outline" size={20} color="#94a3b8" />
             <TextInput
               value={email}
               onChangeText={setEmail}
-              placeholder="example@gmail.com"
+              placeholder={t('login.emailPlaceholder')}
               placeholderTextColor="#64748b"
               keyboardType="email-address"
               autoCapitalize="none"
@@ -107,40 +109,40 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
             style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
           >
             <Text className="text-white font-semibold text-center">
-              Kod yuborish
+              {t('login.sendCode')}
             </Text>
           </Pressable>
         ) : (
           <>
             <View className="mb-4">
               <Text className="text-sm font-medium text-foreground mb-2">
-                Tasdiqlash kodi
+                {t('login.verificationCode')}
               </Text>
               <View className="flex-row items-center bg-card border border-border rounded-xl px-4 py-3">
                 <Ionicons name="lock-closed-outline" size={20} color="#94a3b8" />
                 <TextInput
                   value={code}
                   onChangeText={setCode}
-                  placeholder="000000"
+                  placeholder={t('login.codePlaceholder')}
                   placeholderTextColor="#64748b"
                   keyboardType="number-pad"
                   maxLength={6}
                   className="flex-1 ml-3 text-white tracking-widest"
                 />
               </View>
-              
+
               <View className="flex-row items-center justify-between mt-2">
                 <Text className="text-xs text-muted-foreground">
-                  Kod emailga yuborildi
+                  {t('login.codeSent')}
                 </Text>
                 {timer > 0 ? (
                   <Text className="text-xs text-primary">
-                    {timer} soniya
+                    {timer} {t('login.seconds')}
                   </Text>
                 ) : (
                   <Pressable onPress={handleSendCode}>
                     <Text className="text-xs text-primary font-medium">
-                      Qayta yuborish
+                      {t('login.resendCode')}
                     </Text>
                   </Pressable>
                 )}
@@ -153,7 +155,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
               style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
             >
               <Text className="text-white font-semibold text-center">
-                Kirish
+                {t('login.login')}
               </Text>
             </Pressable>
           </>
@@ -161,7 +163,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
         <View className="flex-row items-center mb-6">
           <View className="flex-1 h-px bg-border" />
-          <Text className="px-4 text-sm text-muted-foreground">yoki</Text>
+          <Text className="px-4 text-sm text-muted-foreground">{t('common.or')}</Text>
           <View className="flex-1 h-px bg-border" />
         </View>
 
@@ -172,7 +174,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
             style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
           >
             <Ionicons name="logo-google" size={24} color="#4285F4" />
-            <Text className="text-white font-medium">Google bilan kirish</Text>
+            <Text className="text-white font-medium">{t('login.loginWithGoogle')}</Text>
           </Pressable>
 
           <Pressable
@@ -181,17 +183,17 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
             style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
           >
             <Ionicons name="logo-apple" size={24} color="#ffffff" />
-            <Text className="text-white font-medium">Apple bilan kirish</Text>
+            <Text className="text-white font-medium">{t('login.loginWithApple')}</Text>
           </Pressable>
         </View>
 
         <View className="flex-row items-center justify-center gap-2">
           <Text className="text-muted-foreground text-sm">
-            Akkauntingiz yoqmi?
+            {t('login.noAccount')}
           </Text>
           <Pressable onPress={() => navigation.navigate('Register')}>
             <Text className="text-primary font-medium text-sm">
-              Royxatdan otish
+              {t('login.register')}
             </Text>
           </Pressable>
         </View>

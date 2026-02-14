@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../types/navigation';
 import { useAuth } from '../context/AuthContext';
+import { useAppDispatch } from '../store/hooks';
+import { changeLanguage } from '../store/languageSlice';
+import { Language } from '../i18n/locales';
+import { useTranslation } from '../i18n/useTranslation';
 
 interface Language {
   code: string;
@@ -24,19 +27,22 @@ type LanguageScreenProps = {
 };
 
 export default function LanguageScreen({ navigation }: LanguageScreenProps) {
-  const [selectedLanguage, setSelectedLanguage] = useState<string>('uz');
+  const [selectedLanguage, setSelectedLanguage] = useState<Language>('uz');
   const { setLanguageSelected } = useAuth();
+  const dispatch = useAppDispatch();
+  const { t } = useTranslation();
 
   const handleContinue = async () => {
     try {
-      await AsyncStorage.setItem('@app_language', selectedLanguage);
+      // Save language using Redux
+      await dispatch(changeLanguage(selectedLanguage));
       await setLanguageSelected();
-      
+
       // Navigate to Login screen
       navigation.replace('Login');
     } catch (error) {
       console.error('Error saving language:', error);
-      Alert.alert('Error', 'Failed to save language');
+      Alert.alert(t('common.error'), 'Failed to save language');
     }
   };
 
@@ -51,16 +57,16 @@ export default function LanguageScreen({ navigation }: LanguageScreenProps) {
             GlucoSense
           </Text>
           <Text className="text-muted-foreground text-center text-sm max-w-[200px]">
-            Sog'ligingizni nazorat qilishning zamonaviy usuli
+            {t('language.description')}
           </Text>
         </View>
 
         <View className="mb-6">
           <Text className="text-lg font-semibold text-foreground mb-1">
-            Tilni tanlang
+            {t('language.title')}
           </Text>
           <Text className="text-sm text-muted-foreground">
-            Select interface language
+            {t('language.subtitle')}
           </Text>
         </View>
 
@@ -114,7 +120,7 @@ export default function LanguageScreen({ navigation }: LanguageScreenProps) {
             })}
           >
             <Text className="text-white font-semibold text-base">
-              Davom etish
+              {t('common.continue')}
             </Text>
             <Ionicons name="arrow-forward" size={20} color="white" />
           </Pressable>

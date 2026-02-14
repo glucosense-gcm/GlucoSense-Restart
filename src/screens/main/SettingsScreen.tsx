@@ -9,21 +9,31 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../context/AuthContext";
+import { useTranslation } from "../../i18n/useTranslation";
+import { useAppDispatch } from "../../store/hooks";
+import { changeLanguage } from "../../store/languageSlice";
+import { Language } from "../../i18n/locales";
 
 export default function SettingsScreen() {
   const { user } = useAuth();
+  const { t, currentLanguage } = useTranslation();
+  const dispatch = useAppDispatch();
   const [selectedUnit, setSelectedUnit] = useState("mmol/L");
   const [languageModalVisible, setLanguageModalVisible] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState("O'zbekcha");
 
   const languages = [
-    { code: "uz", name: "O'zbekcha", flag: "🇺🇿" },
-    { code: "ru", name: "Русский", flag: "🇷🇺" },
-    { code: "en", name: "English", flag: "🇬🇧" },
+    { code: "uz" as Language, name: t('language.uzbek'), flag: "🇺🇿" },
+    { code: "ru" as Language, name: t('language.russian'), flag: "🇷🇺" },
+    { code: "en" as Language, name: t('language.english'), flag: "🇬🇧" },
   ];
 
-  const handleLanguageSelect = (languages) => {
-    setSelectedLanguage(languages.name);
+  const getCurrentLanguageName = () => {
+    const lang = languages.find(l => l.code === currentLanguage);
+    return lang ? lang.name : languages[0].name;
+  };
+
+  const handleLanguageSelect = async (language: { code: Language; name: string; flag: string }) => {
+    await dispatch(changeLanguage(language.code));
     setLanguageModalVisible(false);
   };
 
@@ -34,7 +44,7 @@ export default function SettingsScreen() {
         contentContainerStyle={styles.scrollContent}
       >
         {/* Header */}
-        <Text style={styles.pageTitle}>Sozlamalar</Text>
+        <Text style={styles.pageTitle}>{t('settings.title')}</Text>
 
         {/* User Profile Card */}
         <View style={styles.profileCard}>
@@ -54,12 +64,12 @@ export default function SettingsScreen() {
 
         {/* To'langan Badge */}
         <View style={styles.profileBadge}>
-          <Text style={styles.badgeText}>TO'LANGAN</Text>
+          <Text style={styles.badgeText}>{t('others.paidfor').toUpperCase()}</Text>
         </View>
 
         {/* Unit Selector Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>O'LCHOV BIRLIGI</Text>
+          <Text style={styles.sectionTitle}>{t('settings.units').toUpperCase()}</Text>
           <View style={styles.unitSelector}>
             <Pressable
               style={[
@@ -98,7 +108,7 @@ export default function SettingsScreen() {
 
         {/* Thresholds Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>XABARNOMA CHEGARALARI</Text>
+          <Text style={styles.sectionTitle}>{t('settings.target').toUpperCase()}</Text>
 
           <View style={styles.settingsCard}>
             {/* High Threshold */}
@@ -108,8 +118,8 @@ export default function SettingsScreen() {
                   <Ionicons name="trending-up" size={24} color="#ef4444" />
                 </View>
                 <View style={styles.settingInfo}>
-                  <Text style={styles.settingTitle}>Yuqori chegara</Text>
-                  <Text style={styles.settingSubtitle}>Kritik daraja</Text>
+                  <Text style={styles.settingTitle}>{t('home.high')}</Text>
+                  <Text style={styles.settingSubtitle}>{t('home.status')}</Text>
                 </View>
               </View>
               <View style={styles.settingRight}>
@@ -128,8 +138,8 @@ export default function SettingsScreen() {
                   <Ionicons name="trending-down" size={24} color="#eab308" />
                 </View>
                 <View style={styles.settingInfo}>
-                  <Text style={styles.settingTitle}>Pastki chegara</Text>
-                  <Text style={styles.settingSubtitle}>Kritik daraja</Text>
+                  <Text style={styles.settingTitle}>{t('home.low')}</Text>
+                  <Text style={styles.settingSubtitle}>{t('home.status')}</Text>
                 </View>
               </View>
               <View style={styles.settingRight}>
@@ -142,7 +152,7 @@ export default function SettingsScreen() {
 
         {/* General Settings Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>UMUMIY</Text>
+          <Text style={styles.sectionTitle}>{t('settings.account').toUpperCase()}</Text>
 
           <View style={styles.settingsCard}>
             {/* Language */}
@@ -154,10 +164,10 @@ export default function SettingsScreen() {
                 <View style={[styles.settingIcon, styles.settingIconBlue]}>
                   <Ionicons name="language" size={24} color="#3b82f6" />
                 </View>
-                <Text style={styles.settingTitle}>Ilova tili</Text>
+                <Text style={styles.settingTitle}>{t('settings.language')}</Text>
               </View>
               <View style={styles.settingRight}>
-                <Text style={styles.settingSecondary}>{selectedLanguage}</Text>
+                <Text style={styles.settingSecondary}>{getCurrentLanguageName()}</Text>
                 <Ionicons name="chevron-forward" size={20} color="#64748b" />
               </View>
             </Pressable>
@@ -171,7 +181,7 @@ export default function SettingsScreen() {
                 <View style={[styles.settingIcon, styles.settingIconGreen]}>
                   <Ionicons name="shield-checkmark" size={24} color="#22c55e" />
                 </View>
-                <Text style={styles.settingTitle}>Xavfsizlik va PIN-kod</Text>
+                <Text style={styles.settingTitle}>{t('settings.privacy')}</Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color="#64748b" />
             </Pressable>
@@ -185,9 +195,7 @@ export default function SettingsScreen() {
                 <View style={[styles.settingIcon, styles.settingIconPurple]}>
                   <Ionicons name="help-circle" size={24} color="#a855f7" />
                 </View>
-                <Text style={styles.settingTitle}>
-                  Yordam va qo'llab-quvvatlash
-                </Text>
+                <Text style={styles.settingTitle}>{t('settings.help')}</Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color="#64748b" />
             </Pressable>
@@ -197,11 +205,11 @@ export default function SettingsScreen() {
         {/* Logout Button */}
         <Pressable style={styles.logoutButton}>
           <Ionicons name="exit-outline" size={24} color="#ef4444" />
-          <Text style={styles.logoutText}>Chiqish</Text>
+          <Text style={styles.logoutText}>{t('settings.logout')}</Text>
         </Pressable>
 
         {/* Version Info */}
-        <Text style={styles.versionText}>Versiya 2.4.0 (Build 102)</Text>
+        <Text style={styles.versionText}>{t('settings.version')} 2.4.0 (Build 102)</Text>
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
@@ -219,7 +227,7 @@ export default function SettingsScreen() {
         >
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Tilni tanlang</Text>
+              <Text style={styles.modalTitle}>{t('language.title')}</Text>
               <Pressable
                 style={styles.modalCloseButton}
                 onPress={() => setLanguageModalVisible(false)}
@@ -239,7 +247,7 @@ export default function SettingsScreen() {
                       <Text style={styles.languageFlag}>{language.flag}</Text>
                       <Text style={styles.languageName}>{language.name}</Text>
                     </View>
-                    {selectedLanguage === language.name && (
+                    {currentLanguage === language.code && (
                       <Ionicons
                         name="checkmark-circle"
                         size={24}

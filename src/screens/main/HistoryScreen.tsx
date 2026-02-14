@@ -1,11 +1,13 @@
 import React, { useState } from 'react'
 import { Pressable, StyleSheet, Text, View, ScrollView, Dimensions } from 'react-native'
 import Svg, { Path, Circle } from 'react-native-svg'
+import { useTranslation } from '../../i18n/useTranslation';
 
 const { width } = Dimensions.get('window')
 
 export default function HistoryScreen() {
-  const [selectedPeriod, setSelectedPeriod] = useState('1 kun')
+  const { t } = useTranslation();
+  const [selectedPeriod, setSelectedPeriod] = useState(t('history.today'));
 
   // Generate sample data for the chart
   const generateChartPath = () => {
@@ -42,8 +44,8 @@ export default function HistoryScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.title}>Tarix</Text>
-            <Text style={styles.subtitle}>Oxirgi 24 soatlik ko'rsatkichlar</Text>
+            <Text style={styles.title}>{t('history.title')}</Text>
+            <Text style={styles.subtitle}>{t('history.today')}</Text>
           </View>
           <Pressable style={styles.calendarButton}>
             <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -61,7 +63,7 @@ export default function HistoryScreen() {
         {/* Stats Cards */}
         <View style={styles.statsContainer}>
           <View style={[styles.statCard, styles.statCardLeft]}>
-            <Text style={styles.statLabel}>QITTACHA</Text>
+            <Text style={styles.statLabel}>{t('home.average').toUpperCase()}</Text>
             <View style={styles.statValueContainer}>
               <Text style={styles.statValue}>5.8</Text>
               <Text style={styles.statUnit}>mmol/L</Text>
@@ -69,17 +71,17 @@ export default function HistoryScreen() {
           </View>
           
           <View style={[styles.statCard, styles.statCardRight]}>
-            <Text style={styles.statLabel}>MAQSADDA</Text>
+            <Text style={styles.statLabel}>{t('settings.target').toUpperCase()}</Text>
             <View style={styles.statValueContainer}>
               <Text style={[styles.statValue, styles.statValueSuccess]}>92%</Text>
-              <Text style={[styles.statUnit, styles.statUnitSuccess]}>vaqt</Text>
+              <Text style={[styles.statUnit, styles.statUnitSuccess]}>{t('history.time')}</Text>
             </View>
           </View>
         </View>
 
         {/* Period Selector */}
         <View style={styles.periodSelector}>
-          {['1 soat', '1 kun', '1 hafta', '1 oy'].map((period) => (
+          {[t('history.today'), t('history.today'), t('history.week'), t('history.month')].map((period) => (
             <Pressable
               key={period}
               style={[
@@ -101,8 +103,8 @@ export default function HistoryScreen() {
         {/* Chart Section */}
         <View style={styles.chartContainer}>
           <View style={styles.chartHeader}>
-            <Text style={styles.chartLabel}>Trend xronologiyasi</Text>
-            <Text style={styles.chartRange}>DIAPAZON</Text>
+            <Text style={styles.chartLabel}>{t('history.title')}</Text>
+            <Text style={styles.chartRange}>{t('settings.target').toUpperCase()}</Text>
           </View>
           <View style={styles.chartRangeValues}>
             <Text style={styles.chartValue}>0-6 mmol/L</Text>
@@ -137,7 +139,7 @@ export default function HistoryScreen() {
         </View>
 
         {/* Date */}
-        <Text style={styles.dateText}>Bugun, 24-Oktyabr</Text>
+        <Text style={styles.dateText}>{t('history.today')}</Text>
 
         {/* Log Entries */}
         <View style={styles.logContainer}>
@@ -156,7 +158,7 @@ export default function HistoryScreen() {
               <View style={styles.logHeader}>
                 <Text style={styles.logTime}>18:45</Text>
               </View>
-              <Text style={styles.logTitle}>Kechki ovqat</Text>
+              <Text style={styles.logTitle}>{t('home.average')}</Text>
               <Text style={styles.logSubtitle}>65g uglevod</Text>
             </View>
             <View style={styles.logValue}>
@@ -181,8 +183,8 @@ export default function HistoryScreen() {
               <View style={styles.logHeader}>
                 <Text style={styles.logTime}>18:50</Text>
               </View>
-              <Text style={styles.logTitle}>Novorapid</Text>
-              <Text style={styles.logSubtitle}>8 birlik • Qorin sonasi</Text>
+              <Text style={styles.logTitle}>{t('home.medication')}</Text>
+              <Text style={styles.logSubtitle}>8 {t('others.birlik')} • {t('others.qorinSonasi')}</Text>
             </View>
           </Pressable>
 
@@ -200,8 +202,8 @@ export default function HistoryScreen() {
               <View style={styles.logHeader}>
                 <Text style={styles.logTime}>16:20</Text>
               </View>
-              <Text style={styles.logTitle}>Avtomatik o'lchov</Text>
-              <Text style={styles.logSubtitle}>Barqaror holat</Text>
+              <Text style={styles.logTitle}>{t('home.lastReading')}</Text>
+              <Text style={styles.logSubtitle}>{t('home.normal')}</Text>
             </View>
             <View style={styles.logValue}>
               <Text style={styles.logValueText}>5.2</Text>
@@ -222,14 +224,14 @@ export default function HistoryScreen() {
               <View style={styles.logHeader}>
                 <Text style={styles.logTime}>14:00</Text>
               </View>
-              <Text style={styles.logTitle}>Yengil sayr</Text>
-              <Text style={styles.logSubtitle}>45 daqiqa • 3.2 km</Text>
+              <Text style={styles.logTitle}>{t('home.yengilsayr')}</Text>
+              <Text style={styles.logSubtitle}>45 {t('others.minut')} • 3.2 km</Text>
             </View>
           </Pressable>
         </View>
 
         {/* Previous Date */}
-        <Text style={[styles.dateText, { marginTop: 24 }]}>Kecha, 23-Oktyabr</Text>
+        <Text style={[styles.dateText, { marginTop: 24 }]}>{t('history.today')}</Text>
 
         {/* Previous Day Entries */}
         <View style={styles.logContainer}>
@@ -246,7 +248,7 @@ export default function HistoryScreen() {
               <View style={styles.logHeader}>
                 <Text style={styles.logTime}>22:30</Text>
               </View>
-              <Text style={styles.logTitle}>Uyqudan oldin</Text>
+              <Text style={styles.logTitle}>{t('history.time')}</Text>
             </View>
             <View style={styles.logValue}>
               <Text style={styles.logValueText}>5.9</Text>

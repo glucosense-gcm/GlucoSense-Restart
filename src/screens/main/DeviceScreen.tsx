@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { BleManager, Device, State } from 'react-native-ble-plx';
 import QRScannerScreen from './QRScannerScreen';
 import { parseGlucosePacket, GlucoseReading } from '../../utils/sibionicsProtocol';
+import { useTranslation } from '../../i18n/useTranslation';
 
 const bleManager = new BleManager();
 
@@ -21,6 +22,7 @@ export default function DeviceScreen() {
   const [bluetoothState, setBluetoothState] = useState<State>('Unknown');
   const [knownDeviceId] = useState<string>('EB:F4:3F:92:87:B7');
   const [latestReading, setLatestReading] = useState<GlucoseReading | null>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const subscription = bleManager.onStateChange((state) => {
@@ -47,7 +49,7 @@ export default function DeviceScreen() {
       );
 
       if (!allGranted) {
-        Alert.alert('Ruxsat kerak', 'Bluetooth va Location ruxsati bering');
+        Alert.alert(t('common.error'), t('qrScanner.permissionDenied'));
         return false;
       }
     }
@@ -59,7 +61,7 @@ export default function DeviceScreen() {
     if (!hasPermission) return;
 
     if (bluetoothState !== 'PoweredOn') {
-      Alert.alert('Bluetooth o\'chirilgan', 'Iltimos yoqing');
+      Alert.alert(t('alerts.bluetoothOff'), t('alerts.pleaseEnable'));
       return;
     }
 
@@ -106,19 +108,19 @@ export default function DeviceScreen() {
         }
       );
       
-      Alert.alert('Ulandi! ✅', 'Sensor ulandi!\n\nData kutilmoqda...');
+      Alert.alert(`${t('alerts.connected')} ✅`, `${t('device.connected')}!\n\n${t('alerts.waitingForData')}`);
       
     } catch (error: any) {
       console.error('❌ Connection failed:', error?.message || error);
       
       if (error?.message?.includes('not found')) {
         Alert.alert(
-          'Sensor topilmadi',
-          'SugarJoy+ ni Force Stop qiling va qayta urinib ko\'ring',
+          t('alerts.sensorNotFound'),
+          t('alerts.forceStop'),
           [{ text: 'OK' }]
         );
       } else {
-        Alert.alert('Xato', error?.message || 'Ulanib bo\'lmadi');
+        Alert.alert(t('common.error'), error?.message || t('alerts.connectionFailed'));
       }
     } finally {
       setIsConnecting(false);
@@ -131,7 +133,7 @@ export default function DeviceScreen() {
         await bleManager.cancelDeviceConnection(connectedDevice.id);
         setConnectedDevice(null);
         setLatestReading(null);
-        Alert.alert('Uzildi', 'Qurilma uzildi');
+        Alert.alert(t('common.success'), t('device.disconnected'));
       } catch (error) {
         console.error('Disconnect error:', error);
       }
@@ -141,11 +143,11 @@ export default function DeviceScreen() {
   const handleSensorScanned = (info: { connectionCode: string }) => {
     setTargetCode(info.connectionCode);
     Alert.alert(
-      'Sensor topildi! ✅',
-      `Connection Code: ${info.connectionCode}\n\nUlanishni boshlaysizmi?`,
+      `${t('alerts.sensorFound')} ✅`,
+      `Connection Code: ${info.connectionCode}\n\n${t('alerts.startConnection')}`,
       [
-        { text: 'Yo\'q', style: 'cancel' },
-        { text: 'Ha', onPress: connectDirectly }
+        { text: t('alerts.no'), style: 'cancel' },
+        { text: t('alerts.yes'), onPress: connectDirectly }
       ]
     );
   };
@@ -155,7 +157,7 @@ export default function DeviceScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={{ padding: 24, paddingTop: 60 }}>
           <Text style={{ color: '#ffffff', fontSize: 28, fontWeight: 'bold' }}>
-            Qurilmalar
+            {t('device.title')}
           </Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
             <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: bluetoothState === 'PoweredOn' ? '#22c55e' : '#ef4444', marginRight: 6 }} />
@@ -167,7 +169,7 @@ export default function DeviceScreen() {
 
         {latestReading && (
           <View style={{ marginHorizontal: 24, marginBottom: 20, backgroundColor: '#1e3a5f', borderRadius: 20, padding: 24, borderLeftWidth: 4, borderLeftColor: '#10b981' }}>
-            <Text style={{ color: '#94a3b8', fontSize: 14, marginBottom: 8 }}>Oxirgi o'lchash</Text>
+            <Text style={{ color: '#94a3b8', fontSize: 14, marginBottom: 8 }}>{t('home.lastReading')}</Text>
             <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
               <Text style={{ color: '#ffffff', fontSize: 48, fontWeight: 'bold' }}>
                 {latestReading.glucoseMmol.toFixed(1)}
@@ -193,13 +195,13 @@ export default function DeviceScreen() {
               </View>
               <View style={{ marginLeft: 12, flex: 1 }}>
                 <Text style={{ color: '#ffffff', fontSize: 18, fontWeight: '600' }}>
-                  {connectedDevice.name || 'Sibionics Sensor'}
+                  {connectedDevice.name || t('device.title')}
                 </Text>
-                <Text style={{ color: '#22c55e', fontSize: 12, marginTop: 4 }}>Ulangan</Text>
+                <Text style={{ color: '#22c55e', fontSize: 12, marginTop: 4 }}>{t('device.connected')}</Text>
               </View>
             </View>
             <Pressable onPress={disconnectDevice} style={{ backgroundColor: '#ef4444', borderRadius: 12, padding: 12 }}>
-              <Text style={{ color: '#ffffff', textAlign: 'center', fontWeight: '600' }}>Uzish</Text>
+              <Text style={{ color: '#ffffff', textAlign: 'center', fontWeight: '600' }}>{t('device.disconnect')}</Text>
             </Pressable>
           </View>
         )}
@@ -219,7 +221,7 @@ export default function DeviceScreen() {
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name="flash" size={24} color="#ffffff" style={{ marginRight: 8 }} />
               <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: '600' }}>
-                {isConnecting ? 'Ulanmoqda...' : connectedDevice ? 'Ulangan' : 'Direct Connect'}
+                {isConnecting ? t('device.searching') : connectedDevice ? t('device.connected') : t('device.connect')}
               </Text>
             </View>
           </Pressable>
@@ -241,13 +243,11 @@ export default function DeviceScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
             <Ionicons name="checkmark-circle" size={20} color="#10b981" />
             <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: '600', marginLeft: 8 }}>
-              Protocol Decoded! ✅
+              {t('alerts.protocolDecoded')} ✅
             </Text>
           </View>
           <Text style={{ color: '#94a3b8', fontSize: 13, lineHeight: 20 }}>
-            Sibionics protokol muvaffaqiyatli decode qilindi!{'\n'}
-            Formula: Bytes[6-7] (LE) / 1800 = mmol/L{'\n'}
-            Har 1 daqiqada yangi data keladi.
+            {t('alerts.protocolSuccess')}
           </Text>
         </View>
       </ScrollView>

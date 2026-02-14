@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '../../i18n/useTranslation';
 
 interface Props {
   onCodeEntered: (code: string) => void;
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export default function ManualCodeScreen({ onCodeEntered, onClose }: Props) {
+  const { t } = useTranslation();
   const [code, setCode] = useState('');
 
   const handleSubmit = () => {
@@ -18,8 +20,8 @@ export default function ManualCodeScreen({ onCodeEntered, onClose }: Props) {
       onClose();
     } else {
       Alert.alert(
-        'Xato',
-        'Connection code 8 ta harf/raqamdan iborat bo\'lishi kerak.\n\nMisol: 9VLB672K'
+        t('common.error'),
+        `${t('alerts.connectionCodeFormat')}.\n\n${t('alerts.example')}: 9VLB672K`
       );
     }
   };
@@ -38,13 +40,13 @@ export default function ManualCodeScreen({ onCodeEntered, onClose }: Props) {
             <Ionicons name="key" size={64} color="#3b82f6" />
           </View>
 
-          <Text style={styles.title}>Connection Code</Text>
+          <Text style={styles.title}>{t('manualCode.deviceCode')}</Text>
           <Text style={styles.subtitle}>
-            Sensor qutisidagi 8 belgili kodni kiriting
+            {t('manualCode.subtitle')}
           </Text>
 
           <View style={styles.example}>
-            <Text style={styles.exampleLabel}>Misol:</Text>
+            <Text style={styles.exampleLabel}>{t('alerts.example')}</Text>
             <Text style={styles.exampleCode}>9VLB672K</Text>
           </View>
 
@@ -64,14 +66,14 @@ export default function ManualCodeScreen({ onCodeEntered, onClose }: Props) {
             style={[styles.button, code.length === 8 && styles.buttonActive]}
             disabled={code.length !== 8}
           >
-            <Text style={styles.buttonText}>Davom etish</Text>
+            <Text style={styles.buttonText}>{t('common.continue')}</Text>
             <Ionicons name="arrow-forward" size={20} color="#ffffff" />
           </Pressable>
 
           <View style={styles.hint}>
             <Ionicons name="information-circle-outline" size={20} color="#64748b" />
             <Text style={styles.hintText}>
-              Code sensor qutisining orqa tomonida yozilgan
+              {t('alerts.codeLocation')}
             </Text>
           </View>
         </View>

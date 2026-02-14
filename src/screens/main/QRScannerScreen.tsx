@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '../../i18n/useTranslation';
 
 interface SensorInfo {
   serialNumber: string;
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export default function QRScannerScreen({ onSensorScanned, onClose }: Props) {
+  const { t } = useTranslation();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
 
@@ -45,18 +47,18 @@ export default function QRScannerScreen({ onSensorScanned, onClose }: Props) {
     
     if (sensorInfo) {
       Alert.alert(
-        'Sensor topildi! ✅',
+        `${t('alerts.sensorFound')} ✅`,
         `Serial: ${sensorInfo.serialNumber}\n\nConnection Code: ${sensorInfo.connectionCode}`,
         [
           {
-            text: 'Ulanish',
+            text: t('device.connect'),
             onPress: () => {
               onSensorScanned(sensorInfo);
               onClose();
             }
           },
           {
-            text: 'Bekor qilish',
+            text: t('common.cancel'),
             style: 'cancel',
             onPress: () => setScanned(false)
           }
@@ -64,9 +66,9 @@ export default function QRScannerScreen({ onSensorScanned, onClose }: Props) {
       );
     } else {
       Alert.alert(
-        'Xato ❌',
-        'Noto\'g\'ri QR code formati. Sibionics sensor QR code\'ini scan qiling.',
-        [{ text: 'Qayta urinish', onPress: () => setScanned(false) }]
+        `${t('common.error')} ❌`,
+        `${t('alerts.invalidFormat')}. ${t('alerts.scanSensorQR')}.`,
+        [{ text: t('alerts.retryAgain'), onPress: () => setScanned(false) }]
       );
     }
   };
@@ -74,7 +76,7 @@ export default function QRScannerScreen({ onSensorScanned, onClose }: Props) {
   if (!permission) {
     return (
       <View style={styles.container}>
-        <Text style={styles.text}>Kamera ruxsati yuklanmoqda...</Text>
+        <Text style={styles.text}>{t('common.loading')}</Text>
       </View>
     );
   }
@@ -82,13 +84,13 @@ export default function QRScannerScreen({ onSensorScanned, onClose }: Props) {
   if (!permission.granted) {
     return (
       <View style={styles.container}>
-        <Ionicons name="camera-off" size={64} color="#ef4444" />
-        <Text style={styles.text}>Kamera ruxsati kerak</Text>
+        <Ionicons name="videocam-off-outline" size={64} color="#ef4444" />
+        <Text style={styles.text}>{t('qrScanner.permissionDenied')}</Text>
         <Pressable onPress={requestPermission} style={styles.button}>
-          <Text style={styles.buttonText}>Ruxsat berish</Text>
+          <Text style={styles.buttonText}>{t('qrScanner.grantPermission')}</Text>
         </Pressable>
         <Pressable onPress={onClose} style={[styles.button, { backgroundColor: '#334155', marginTop: 10 }]}>
-          <Text style={styles.buttonText}>Yopish</Text>
+          <Text style={styles.buttonText}>{t('common.cancel')}</Text>
         </Pressable>
       </View>
     );
@@ -122,7 +124,7 @@ export default function QRScannerScreen({ onSensorScanned, onClose }: Props) {
         <View style={styles.instructions}>
           <Ionicons name="qr-code-outline" size={48} color="#3b82f6" />
           <Text style={styles.instructionText}>
-            Sibionics sensor qutisidagi{'\n'}QR code'ni scan qiling
+            {t('qrScanner.instruction')}
           </Text>
         </View>
       </View>
@@ -131,7 +133,7 @@ export default function QRScannerScreen({ onSensorScanned, onClose }: Props) {
         <View style={styles.footer}>
           <Pressable style={styles.rescanButton} onPress={() => setScanned(false)}>
             <Ionicons name="reload" size={20} color="#ffffff" style={{ marginRight: 8 }} />
-            <Text style={styles.rescanText}>Qayta scan</Text>
+            <Text style={styles.rescanText}>{t('device.scanAgain')}</Text>
           </Pressable>
         </View>
       )}

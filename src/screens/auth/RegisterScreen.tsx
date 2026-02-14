@@ -3,20 +3,22 @@ import { View, Text, ScrollView, Pressable, Dimensions, StyleSheet } from 'react
 import { Ionicons } from '@expo/vector-icons';
 import { LineChart } from 'react-native-chart-kit';
 import { useAuth } from '../../context/AuthContext';
+import { useTranslation } from '../../i18n/useTranslation';
 
 const screenWidth = Dimensions.get('window').width;
 
 export default function HomeScreen() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const currentGlucose = 5.8;
-  
+
   const getGlucoseColor = (value: number) => {
-    if (value < 3.9) return { main: '#eab308', bg: 'rgba(234, 179, 8, 0.15)', text: 'Past' };
-    if (value > 7.0) return { main: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', text: 'Yuqori' };
-    return { main: '#34d399', bg: 'rgba(52, 211, 153, 0.12)', text: 'Normal holat' };
+    if (value < 3.9) return { main: '#eab308', bg: 'rgba(234, 179, 8, 0.15)', text: t('home.low') };
+    if (value > 7.0) return { main: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', text: t('home.high') };
+    return { main: '#34d399', bg: 'rgba(52, 211, 153, 0.12)', text: t('home.normal') };
   };
 
- const glucoseStatus = getGlucoseColor(currentGlucose);
+  const glucoseStatus = getGlucoseColor(currentGlucose);
 
 console.log('glucoseStatus.main =', glucoseStatus.main);
   return (
@@ -30,8 +32,8 @@ console.log('glucoseStatus.main =', glucoseStatus.main);
               <Text style={styles.avatarEmoji}>👤</Text>
             </View>
             <View>
-              <Text style={styles.greeting}>Xayrli kech,</Text>
-              <Text style={styles.userName}>{user?.name || 'Azizbek'}</Text>
+              <Text style={styles.greeting}>{t('home.goodEvening')},</Text>
+              <Text style={styles.userName}>{user?.name || 'User'}</Text>
             </View>
           </View>
           <View style={styles.headerRight}>
@@ -71,11 +73,11 @@ console.log('glucoseStatus.main =', glucoseStatus.main);
               <Text style={[styles.statusText, { color: glucoseStatus.main }]}>{glucoseStatus.text}</Text>
             </View>
             
-            <Text style={styles.lastUpdate}>Qidirg'ich bilan 5 daqiqa oldin</Text>
+            <Text style={styles.lastUpdate}>{t('home.lastReadingTime')}</Text>
           </View>
 
           <View style={styles.chartSection}>
-            <Text style={styles.chartTitle}>So'ngi 24 soat</Text>
+            <Text style={styles.chartTitle}>{t('home.last24Hours')}</Text>
             <View style={styles.chartContainer}>
               <LineChart
                 data={{
@@ -116,8 +118,8 @@ console.log('glucoseStatus.main =', glucoseStatus.main);
               <Text style={styles.actionEmoji}>💉</Text>
             </View>
             <View>
-              <Text style={styles.actionTitle}>Insulin</Text>
-              <Text style={styles.actionSubtitle}>Kiritish</Text>
+              <Text style={styles.actionTitle}>{t('home.insulin')}</Text>
+              <Text style={styles.actionSubtitle}>{t('home.log')}</Text>
             </View>
           </Pressable>
 
@@ -126,8 +128,8 @@ console.log('glucoseStatus.main =', glucoseStatus.main);
               <Text style={styles.actionEmoji}>🍴</Text>
             </View>
             <View>
-              <Text style={styles.actionTitle}>Uglevod</Text>
-              <Text style={styles.actionSubtitle}>O'vqatlanish</Text>
+              <Text style={styles.actionTitle}>{t('home.carbs')}</Text>
+              <Text style={styles.actionSubtitle}>{t('home.meal')}</Text>
             </View>
           </Pressable>
         </View>
