@@ -5,7 +5,8 @@ import { BleManager, Device, State } from 'react-native-ble-plx';
 import QRScannerScreen from './QRScannerScreen';
 import { parseGlucosePacket, GlucoseReading } from '../../utils/sibionicsProtocol';
 
-const bleManager = new BleManager();
+// Only import/instantiate BleManager if not on web
+const bleManager = Platform.OS !== 'web' ? new BleManager() : null;
 
 const SIBIONICS_SERVICE = '0000ff30-0000-1000-8000-00805f9b34fb';
 const SIBIONICS_NOTIFY = '0000ff31-0000-1000-8000-00805f9b34fb';
@@ -18,19 +19,21 @@ export default function DeviceScreen() {
   const [devices, setDevices] = useState<Device[]>([]);
   const [connectedDevice, setConnectedDevice] = useState<Device | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [bluetoothState, setBluetoothState] = useState<State>('Unknown');
+  const [bluetoothState, setBluetoothState] = useState<State>(State.Unknown);
   const [knownDeviceId] = useState<string>('EB:F4:3F:92:87:B7');
   const [latestReading, setLatestReading] = useState<GlucoseReading | null>(null);
 
   useEffect(() => {
+    if (!bleManager) return;
+
     const subscription = bleManager.onStateChange((state) => {
-      console.log('��� Bluetooth State:', state);
+      console.log(' Bluetooth State:', state);
       setBluetoothState(state);
     }, true);
 
     return () => {
       subscription.remove();
-      bleManager.stopDeviceScan();
+      bleManager?.stopDeviceScan();
     };
   }, []);
 
@@ -67,21 +70,23 @@ export default function DeviceScreen() {
     console.log('��� Direct connect to:', knownDeviceId);
 
     try {
+      if (!bleManager) throw new Error('Bluetooth manager not initialized');
+
       const connected = await bleManager.connectToDevice(knownDeviceId, {
         requestMTU: 512,
         refreshGatt: 'OnConnected',
         timeout: 30000
       });
-      
+
       console.log('✅ Connected!');
-      
+
       await connected.discoverAllServicesAndCharacteristics();
       console.log('✅ Services discovered!');
-      
+
       setConnectedDevice(connected);
-      
+
       console.log('��� Subscribing to glucose data...');
-      
+
       connected.monitorCharacteristicForService(
         SIBIONICS_SERVICE,
         SIBIONICS_NOTIFY,
@@ -90,27 +95,27 @@ export default function DeviceScreen() {
             console.error('❌ Monitor error:', error.message);
             return;
           }
-          
+
           if (characteristic?.value) {
             console.log('\n��������� GLUCOSE DATA RECEIVED! ���������');
-            
+
             const reading = parseGlucosePacket(characteristic.value);
-            
+
             if (reading && reading.isValid) {
               setLatestReading(reading);
               console.log('��� Saved to state:', reading.glucoseMmol, 'mmol/L');
             }
-            
+
             console.log('═══════════════════════════════\n');
           }
         }
       );
-      
+
       Alert.alert('Ulandi! ✅', 'Sensor ulandi!\n\nData kutilmoqda...');
-      
+
     } catch (error: any) {
       console.error('❌ Connection failed:', error?.message || error);
-      
+
       if (error?.message?.includes('not found')) {
         Alert.alert(
           'Sensor topilmadi',
@@ -126,7 +131,7 @@ export default function DeviceScreen() {
   };
 
   const disconnectDevice = async () => {
-    if (connectedDevice) {
+    if (connectedDevice && bleManager) {
       try {
         await bleManager.cancelDeviceConnection(connectedDevice.id);
         setConnectedDevice(null);
@@ -208,9 +213,9 @@ export default function DeviceScreen() {
           <Pressable
             onPress={connectDirectly}
             disabled={isConnecting || bluetoothState !== 'PoweredOn' || !!connectedDevice}
-            style={{ 
+            style={{
               backgroundColor: isConnecting ? '#334155' : connectedDevice ? '#64748b' : '#10b981',
-              borderRadius: 16, 
+              borderRadius: 16,
               padding: 18,
               marginBottom: 12,
               opacity: (isConnecting || connectedDevice) ? 0.5 : 1

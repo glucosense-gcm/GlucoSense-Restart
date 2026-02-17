@@ -16,6 +16,7 @@ export type MainTabsParamList = {
 
 export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
+  ProfileCompletion: undefined;
   Main: NavigatorScreenParams<MainTabsParamList>;
 };
 

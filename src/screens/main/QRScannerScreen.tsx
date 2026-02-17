@@ -19,30 +19,30 @@ export default function QRScannerScreen({ onSensorScanned, onClose }: Props) {
 
   const parseQRCode = (rawData: string): SensorInfo | null => {
     console.log('QR Data:', rawData);
-    
+
     // FIXED: 18 characters (not 19!)
     const serialMatch = rawData.match(/21([A-Z0-9]{18})/);
-    
+
     if (serialMatch) {
       const serialNumber = serialMatch[1];
       const connectionCode = serialNumber.substring(6, 14);
-      
+
       console.log('✅ Serial Number:', serialNumber);
       console.log('✅ Connection Code:', connectionCode);
-      
+
       return { serialNumber, connectionCode };
     }
-    
+
     console.log('❌ No match found!');
     return null;
   };
 
   const handleBarCodeScanned = ({ data }: { data: string }) => {
     if (scanned) return;
-    
+
     setScanned(true);
     const sensorInfo = parseQRCode(data);
-    
+
     if (sensorInfo) {
       Alert.alert(
         'Sensor topildi! ✅',
@@ -82,7 +82,7 @@ export default function QRScannerScreen({ onSensorScanned, onClose }: Props) {
   if (!permission.granted) {
     return (
       <View style={styles.container}>
-        <Ionicons name="camera-off" size={64} color="#ef4444" />
+        <Ionicons name="camera-outline" size={64} color="#ef4444" />
         <Text style={styles.text}>Kamera ruxsati kerak</Text>
         <Pressable onPress={requestPermission} style={styles.button}>
           <Text style={styles.buttonText}>Ruxsat berish</Text>
@@ -104,21 +104,21 @@ export default function QRScannerScreen({ onSensorScanned, onClose }: Props) {
         }}
         onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
       />
-      
+
       <View style={styles.overlay}>
         <View style={styles.header}>
           <Pressable onPress={onClose} style={styles.closeButton}>
             <Ionicons name="close" size={28} color="#ffffff" />
           </Pressable>
         </View>
-        
+
         <View style={styles.scanArea}>
           <View style={[styles.corner, styles.cornerTL]} />
           <View style={[styles.corner, styles.cornerTR]} />
           <View style={[styles.corner, styles.cornerBL]} />
           <View style={[styles.corner, styles.cornerBR]} />
         </View>
-        
+
         <View style={styles.instructions}>
           <Ionicons name="qr-code-outline" size={48} color="#3b82f6" />
           <Text style={styles.instructionText}>
@@ -126,7 +126,7 @@ export default function QRScannerScreen({ onSensorScanned, onClose }: Props) {
           </Text>
         </View>
       </View>
-      
+
       {scanned && (
         <View style={styles.footer}>
           <Pressable style={styles.rescanButton} onPress={() => setScanned(false)}>

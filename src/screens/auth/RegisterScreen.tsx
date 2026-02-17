@@ -10,13 +10,21 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Modal,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { Ionicons } from '@expo/vector-icons';
+import dayjs from 'dayjs';
+import 'dayjs/locale/ru';
 import { useRegisterMutation } from '../../store/services/authService';
 
 export default function RegisterScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
+  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [register, { isLoading }] = useRegisterMutation();
 
   const validateForm = () => {
@@ -36,8 +44,16 @@ export default function RegisterScreen({ navigation }: any) {
       Alert.alert('Ошибка', 'Пароль должен быть минимум 6 символов');
       return false;
     }
-    if (!name.trim()) {
+    if (!firstName.trim()) {
       Alert.alert('Ошибка', 'Введите имя');
+      return false;
+    }
+    if (!lastName.trim()) {
+      Alert.alert('Ошибка', 'Введите фамилию');
+      return false;
+    }
+    if (!dateOfBirth) {
+      Alert.alert('Ошибка', 'Выберите дату рождения');
       return false;
     }
     return true;
@@ -50,7 +66,9 @@ export default function RegisterScreen({ navigation }: any) {
       const result = await register({
         email: email.trim(),
         password,
-        name: name.trim(),
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        dateOfBirth: dateOfBirth!.toISOString(),
         language: 'ru',
       }).unwrap();
 
@@ -84,8 +102,21 @@ export default function RegisterScreen({ navigation }: any) {
               style={styles.input}
               placeholder="Введите ваше имя"
               placeholderTextColor="#64748b"
-              value={name}
-              onChangeText={setName}
+              value={firstName}
+              onChangeText={setFirstName}
+              autoCapitalize="words"
+              editable={!isLoading}
+            />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Фамилия</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Введите вашу фамилию"
+              placeholderTextColor="#64748b"
+              value={lastName}
+              onChangeText={setLastName}
               autoCapitalize="words"
               editable={!isLoading}
             />
@@ -118,6 +149,73 @@ export default function RegisterScreen({ navigation }: any) {
               autoCapitalize="none"
               editable={!isLoading}
             />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Дата рождения</Text>
+            <Pressable
+              onPress={() => {
+                console.log('Date picker button pressed');
+                setDatePickerVisibility(true);
+              }}
+              disabled={isLoading}
+              style={[styles.input, styles.datePickerButton]}
+            >
+              <Text style={dateOfBirth ? styles.dateText : styles.datePlaceholder}>
+                {dateOfBirth ? dateOfBirth.toLocaleDateString('ru-RU') : 'Выберите дату'}
+              </Text>
+            </Pressable>
+            {/* DateTimePicker в Modal для iOS */}
+            {isDatePickerVisible && Platform.OS === 'ios' && (
+              <Modal
+                transparent={true}
+                animationType="slide"
+                visible={isDatePickerVisible}
+                onRequestClose={() => setDatePickerVisibility(false)}
+              >
+                <View style={styles.modalOverlay}>
+                  <View style={styles.datePickerContainer}>
+                    <View style={styles.datePickerHeader}>
+                      <Pressable onPress={() => setDatePickerVisibility(false)}>
+                        <Text style={styles.datePickerHeaderButton}>Готово</Text>
+                      </Pressable>
+                    </View>
+                    <DateTimePicker
+                      value={dateOfBirth || new Date(2000, 0, 1)}
+                      mode="date"
+                      display="spinner"
+                      onChange={(event, selectedDate) => {
+                        if (selectedDate) {
+                          setDateOfBirth(selectedDate);
+                        }
+                      }}
+                      maximumDate={new Date()}
+                      minimumDate={new Date(1900, 0, 1)}
+                      locale="ru-RU"
+                      textColor="#ffffff"
+                      themeVariant="dark"
+                    />
+                  </View>
+                </View>
+              </Modal>
+            )}
+
+            {/* DateTimePicker для Android */}
+            {isDatePickerVisible && Platform.OS === 'android' && (
+              <DateTimePicker
+                value={dateOfBirth || new Date(2000, 0, 1)}
+                mode="date"
+                display="default"
+                onChange={(event, selectedDate) => {
+                  setDatePickerVisibility(false);
+                  if (selectedDate) {
+                    setDateOfBirth(selectedDate);
+                  }
+                }}
+                maximumDate={new Date()}
+                minimumDate={new Date(1900, 0, 1)}
+              />
+            )}
           </View>
 
           <Pressable
@@ -231,6 +329,40 @@ const styles = StyleSheet.create({
   },
   linkTextBold: {
     color: '#3b82f6',
+    fontWeight: '600',
+  },
+  datePickerButton: {
+    justifyContent: 'center',
+  },
+  dateText: {
+    color: '#ffffff',
+    fontSize: 16,
+  },
+  datePlaceholder: {
+    color: '#64748b',
+    fontSize: 16,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  datePickerContainer: {
+    backgroundColor: '#1e293b',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: 40,
+  },
+  datePickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#334155',
+  },
+  datePickerHeaderButton: {
+    color: '#3b82f6',
+    fontSize: 17,
     fontWeight: '600',
   },
 });

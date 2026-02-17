@@ -4,8 +4,14 @@ import { api } from './api';
 export interface User {
     id: string;
     email: string;
-    name: string;
+    firstName: string;
+    lastName: string;
+    dateOfBirth: string; // ISO date string
+    age?: number; // Virtual field from backend
+    profilePhoto?: string;
     language?: string;
+    authProvider?: string;
+    emailVerified?: boolean;
 }
 
 export interface AuthResponse {
@@ -26,7 +32,9 @@ export interface ErrorResponse {
 export interface RegisterRequest {
     email: string;
     password: string;
-    name: string;
+    firstName: string;
+    lastName: string;
+    dateOfBirth: string; // ISO date string
     language?: string;
 }
 
@@ -103,6 +111,16 @@ export const authService = api.injectEndpoints({
         getMe: builder.query<{ success: boolean; data: { user: User } }, void>({
             query: () => '/api/auth/me',
         }),
+        updateProfile: builder.mutation<
+            { success: boolean; data: { user: User }; message: string },
+            { dateOfBirth?: string; firstName?: string; lastName?: string; language?: string }
+        >({
+            query: (profileData) => ({
+                url: '/api/auth/profile',
+                method: 'PATCH',
+                body: profileData,
+            }),
+        }),
     }),
     overrideExisting: true,
 });
@@ -114,4 +132,5 @@ export const {
     useVerifyCodeMutation,
     useFirebaseAuthMutation,
     useGetMeQuery,
+    useUpdateProfileMutation,
 } = authService;

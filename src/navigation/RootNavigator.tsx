@@ -4,15 +4,17 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { restoreToken } from '../store/slices/authSlice';
+import { isProfileIncomplete } from '../utils/profileUtils';
 import AuthStack from './AuthStack';
 import MainTabs from './MainTabs';
+import ProfileCompletionScreen from '../screens/ProfileCompletionScreen';
 import { RootStackParamList } from '../types/navigation';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function RootNavigator() {
   const dispatch = useAppDispatch();
-  const { isAuthenticated, status } = useAppSelector((state) => state.auth);
+  const { isAuthenticated, status, user } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
     dispatch(restoreToken());
@@ -32,6 +34,11 @@ export default function RootNavigator() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!isAuthenticated ? (
           <Stack.Screen name="Auth" component={AuthStack} />
+        ) : isProfileIncomplete(user) ? (
+          <>
+            <Stack.Screen name="ProfileCompletion" component={ProfileCompletionScreen} />
+            <Stack.Screen name="Main" component={MainTabs} />
+          </>
         ) : (
           <Stack.Screen name="Main" component={MainTabs} />
         )}

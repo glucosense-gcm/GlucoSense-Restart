@@ -37,18 +37,35 @@ export const logoutUser = createAsyncThunk('auth/logoutUser', async () => {
     await SecureStore.deleteItemAsync('userToken');
 });
 
+// Async action for setting credentials with SecureStore persistence
+export const setCredentials = createAsyncThunk(
+    'auth/setCredentials',
+    async ({ token, user }: { token: string; user: any }) => {
+        await SecureStore.setItemAsync('userToken', token);
+        return { token, user };
+    }
+);
+
 const authSlice = createSlice({
     name: 'auth',
     initialState,
-    reducers: {
-        setCredentials: (state, action: PayloadAction<{ token: string; user: any }>) => {
-            state.token = action.payload.token;
-            state.user = action.payload.user;
-            state.isAuthenticated = true;
-        },
-    },
+    reducers: {},
     extraReducers: (builder) => {
         builder
+            // Set Credentials
+            .addCase(setCredentials.pending, (state) => {
+                state.status = 'loading';
+            })
+            .addCase(setCredentials.fulfilled, (state, action) => {
+                state.status = 'succeeded';
+                state.token = action.payload.token;
+                state.user = action.payload.user;
+                state.isAuthenticated = true;
+            })
+            .addCase(setCredentials.rejected, (state, action) => {
+                state.status = 'failed';
+                state.error = action.error.message || 'Failed to set credentials';
+            })
             // Restore Token
             .addCase(restoreToken.pending, (state) => {
                 state.status = 'loading';
@@ -87,5 +104,4 @@ const authSlice = createSlice({
     },
 });
 
-export const { setCredentials } = authSlice.actions;
 export default authSlice.reducer;
