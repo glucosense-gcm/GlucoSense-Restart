@@ -176,7 +176,7 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        <View style={styles.bottomSpacer} />
+        <View style={styles.bottomSpacer} />  
       </ScrollView>
     </View>
   );
