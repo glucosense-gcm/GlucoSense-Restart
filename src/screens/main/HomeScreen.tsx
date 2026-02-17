@@ -2,14 +2,14 @@ import React from 'react';
 import { View, Text, ScrollView, Pressable, Dimensions, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { useAuth } from '../../context/AuthContext';
+import { useAppSelector } from '../../store/hooks';
 import { useNavigation } from '@react-navigation/native';
 
 import { useTranslation } from '../../i18n/useTranslation';
 const screenWidth = Dimensions.get('window').width;
 
 export default function HomeScreen() {
-  const { user } = useAuth();
+  const user = useAppSelector((state) => state.auth.user);
   const { t } = useTranslation();
   const currentGlucose = 5.8;
   const navigation = useNavigation();

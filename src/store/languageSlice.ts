@@ -4,11 +4,13 @@ import { Language } from '../i18n/locales';
 
 interface LanguageState {
   currentLanguage: Language;
+  isLanguageSelected: boolean;
   isLoading: boolean;
 }
 
 const initialState: LanguageState = {
-  currentLanguage: 'uz', 
+  currentLanguage: 'uz',
+  isLanguageSelected: false,
   isLoading: true,
 };
 
@@ -20,13 +22,16 @@ const languageSlice = createSlice({
       state.currentLanguage = action.payload;
       state.isLoading = false;
     },
+    setLanguageSelected: (state, action: PayloadAction<boolean>) => {
+      state.isLanguageSelected = action.payload;
+    },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload;
     },
   },
 });
 
-export const { setLanguage, setLoading } = languageSlice.actions;
+export const { setLanguage, setLanguageSelected, setLoading } = languageSlice.actions;
 
 // Thunk to load language from AsyncStorage
 export const loadLanguage = () => async (dispatch: any) => {
@@ -35,8 +40,10 @@ export const loadLanguage = () => async (dispatch: any) => {
     const savedLanguage = await AsyncStorage.getItem('@app_language');
     if (savedLanguage && ['uz', 'ru', 'en'].includes(savedLanguage)) {
       dispatch(setLanguage(savedLanguage as Language));
+      dispatch(setLanguageSelected(true));
     } else {
       dispatch(setLanguage('uz'));
+      dispatch(setLanguageSelected(false));
     }
   } catch (error) {
     console.error('Error loading language:', error);
@@ -51,6 +58,7 @@ export const changeLanguage = (language: Language) => async (dispatch: any) => {
   try {
     await AsyncStorage.setItem('@app_language', language);
     dispatch(setLanguage(language));
+    dispatch(setLanguageSelected(true));
   } catch (error) {
     console.error('Error saving language:', error);
   }

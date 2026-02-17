@@ -3,20 +3,18 @@ import { View, Text, Pressable, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../types/navigation';
-import { useAuth } from '../context/AuthContext';
 import { useAppDispatch } from '../store/hooks';
 import { changeLanguage } from '../store/languageSlice';
-import { Language } from '../i18n/locales';
 import { useTranslation } from '../i18n/useTranslation';
 
-interface Language {
-  code: string;
+interface LanguageOption {
+  code: 'uz' | 'ru' | 'en';
   name: string;
   nativeName: string;
   flag: string;
 }
 
-const LANGUAGES: Language[] = [
+const LANGUAGES: LanguageOption[] = [
   { code: 'uz', name: "O'zbekcha", nativeName: 'Uzbek', flag: '🇺🇿' },
   { code: 'ru', name: 'Русский', nativeName: 'Russian', flag: '🇷🇺' },
   { code: 'en', name: 'English', nativeName: 'English', flag: '🇬🇧' },
@@ -27,18 +25,13 @@ type LanguageScreenProps = {
 };
 
 export default function LanguageScreen({ navigation }: LanguageScreenProps) {
-  const [selectedLanguage, setSelectedLanguage] = useState<Language>('uz');
-  const { setLanguageSelected } = useAuth();
+  const [selectedLanguage, setSelectedLanguage] = useState<'uz' | 'ru' | 'en'>('uz');
   const dispatch = useAppDispatch();
   const { t } = useTranslation();
 
   const handleContinue = async () => {
     try {
-      // Save language using Redux
       await dispatch(changeLanguage(selectedLanguage));
-      await setLanguageSelected();
-
-      // Navigate to Login screen
       navigation.replace('Login');
     } catch (error) {
       console.error('Error saving language:', error);

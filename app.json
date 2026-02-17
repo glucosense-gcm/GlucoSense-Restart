@@ -41,7 +41,9 @@
           ],
           "bluetoothAlwaysUsageDescription": "GlucoSense CGM sensorga ulanish uchun Bluetooth kerak."
         }
-      ]
+      ],
+      "expo-web-browser",
+      "expo-apple-authentication"
     ],
     "extra": {
       "eas": {

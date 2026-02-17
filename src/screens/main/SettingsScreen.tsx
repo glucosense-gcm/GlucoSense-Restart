@@ -8,14 +8,14 @@ import {
   Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "../../context/AuthContext";
 import { useTranslation } from "../../i18n/useTranslation";
-import { useAppDispatch } from "../../store/hooks";
+import { useAppDispatch, useAppSelector } from "../../store/hooks";
+import { logout } from "../../store/authSlice";
 import { changeLanguage } from "../../store/languageSlice";
 import { Language } from "../../i18n/locales";
 
 export default function SettingsScreen() {
-  const { user } = useAuth();
+  const user = useAppSelector((state) => state.auth.user);
   const { t, currentLanguage } = useTranslation();
   const dispatch = useAppDispatch();
   const [selectedUnit, setSelectedUnit] = useState("mmol/L");
@@ -203,7 +203,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* Logout Button */}
-        <Pressable style={styles.logoutButton}>
+        <Pressable style={styles.logoutButton} onPress={() => dispatch(logout())}>
           <Ionicons name="exit-outline" size={24} color="#ef4444" />
           <Text style={styles.logoutText}>{t('settings.logout')}</Text>
         </Pressable>

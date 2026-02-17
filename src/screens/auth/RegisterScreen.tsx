@@ -1,298 +1,258 @@
-import React from 'react';
-import { View, Text, ScrollView, Pressable, Dimensions, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  Alert,
+  StatusBar,
+  ActivityIndicator,
+  ScrollView,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LineChart } from 'react-native-chart-kit';
-import { useAuth } from '../../context/AuthContext';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { AuthStackParamList } from '../../types/navigation';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { registerUser, clearError } from '../../store/authSlice';
 import { useTranslation } from '../../i18n/useTranslation';
 
-const screenWidth = Dimensions.get('window').width;
+type RegisterScreenProps = {
+  navigation: NativeStackNavigationProp<AuthStackParamList, 'Register'>;
+};
 
-export default function HomeScreen() {
-  const { user } = useAuth();
+export default function RegisterScreen({ navigation }: RegisterScreenProps) {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const dispatch = useAppDispatch();
+  const { isRegisterLoading, error } = useAppSelector((state) => state.auth);
   const { t } = useTranslation();
-  const currentGlucose = 5.8;
 
-  const getGlucoseColor = (value: number) => {
-    if (value < 3.9) return { main: '#eab308', bg: 'rgba(234, 179, 8, 0.15)', text: t('home.low') };
-    if (value > 7.0) return { main: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', text: t('home.high') };
-    return { main: '#34d399', bg: 'rgba(52, 211, 153, 0.12)', text: t('home.normal') };
+  useEffect(() => {
+    if (error) {
+      Alert.alert(t('common.error'), error);
+      dispatch(clearError());
+    }
+  }, [error]);
+
+  const validate = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (!name.trim()) {
+      newErrors.name = t('register.errorName');
+    }
+
+    if (!email.trim() || !email.includes('@')) {
+      newErrors.email = t('register.errorEmail');
+    }
+
+    if (password.length < 6) {
+      newErrors.password = t('register.errorPassword');
+    }
+
+    if (password !== confirmPassword) {
+      newErrors.confirmPassword = t('register.errorPasswordMatch');
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const glucoseStatus = getGlucoseColor(currentGlucose);
+  const handleRegister = () => {
+    if (!validate()) return;
+    dispatch(registerUser({ name: name.trim(), email: email.trim(), password }));
+  };
 
-console.log('glucoseStatus.main =', glucoseStatus.main);
   return (
-    <View style={styles.container}>
+    <View className="flex-1 bg-background" style={{ paddingTop: StatusBar.currentHeight || 40 }}>
       <ScrollView
-       showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="always" >
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarEmoji}>👤</Text>
-            </View>
-            <View>
-              <Text style={styles.greeting}>{t('home.goodEvening')},</Text>
-              <Text style={styles.userName}>{user?.name || 'User'}</Text>
-            </View>
-          </View>
-          <View style={styles.headerRight}>
-            <Pressable style={styles.iconButton}>
-              <Ionicons name="notifications-outline" size={22} color="#8b92a8" />
-              <View style={styles.notificationDot} />
-            </Pressable>
-            <Pressable style={styles.iconButton}>
-              <Ionicons name="settings-outline" size={22} color="#8b92a8" />
-            </Pressable>
-          </View>
+        className="flex-1"
+        contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 16, paddingBottom: 40 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Back button */}
+        <Pressable
+          onPress={() => navigation.goBack()}
+          className="w-10 h-10 rounded-full bg-card items-center justify-center mb-6"
+          style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+        >
+          <Ionicons name="arrow-back" size={20} color="#ffffff" />
+        </Pressable>
+
+        {/* Header */}
+        <View className="mb-8">
+          <Text className="text-2xl font-bold text-white mb-1">
+            {t('register.title')}
+          </Text>
+          <Text className="text-sm text-muted-foreground">
+            {t('register.subtitle')}
+          </Text>
         </View>
 
-        <View style={styles.mainCard}>
-          <View style={styles.glucoseSection}>
-            <View style={styles.glucoseValueRow}>
-                <Text
-                    style={[
-                        styles.glucoseValue,
-                        {
-                        color: glucoseStatus.main,
-                        textShadowColor: glucoseStatus.main,
-                        textShadowOffset: { width: 0, height: 0 },
-                        textShadowRadius: 30,
-                        },
-                    ]}
-                    >
-                    {currentGlucose}
-                </Text>
-              <Ionicons name="arrow-forward" size={32} color={glucoseStatus.main} style={{ marginTop: 20, marginLeft: 4 }} />
-            </View>
-            
-            <Text style={styles.glucoseUnit}>mmol/L</Text>
-            
-            <View style={[styles.statusBadge, { backgroundColor: glucoseStatus.bg }]}>
-              <View style={[styles.statusDot, { backgroundColor: glucoseStatus.main }]} />
-              <Text style={[styles.statusText, { color: glucoseStatus.main }]}>{glucoseStatus.text}</Text>
-            </View>
-            
-            <Text style={styles.lastUpdate}>{t('home.lastReadingTime')}</Text>
+        {/* Name */}
+        <View className="mb-4">
+          <Text className="text-sm font-medium text-foreground mb-2">
+            {t('register.name')}
+          </Text>
+          <View
+            className={`flex-row items-center bg-card border rounded-xl px-4 py-3 ${
+              errors.name ? 'border-red-500' : 'border-border'
+            }`}
+          >
+            <Ionicons name="person-outline" size={20} color="#94a3b8" />
+            <TextInput
+              value={name}
+              onChangeText={(text) => {
+                setName(text);
+                if (errors.name) setErrors((e) => ({ ...e, name: '' }));
+              }}
+              placeholder={t('register.namePlaceholder')}
+              placeholderTextColor="#64748b"
+              autoCapitalize="words"
+              className="flex-1 ml-3 text-white"
+            />
           </View>
+          {errors.name ? (
+            <Text className="text-xs text-red-500 mt-1">{errors.name}</Text>
+          ) : null}
+        </View>
 
-          <View style={styles.chartSection}>
-            <Text style={styles.chartTitle}>{t('home.last24Hours')}</Text>
-            <View style={styles.chartContainer}>
-              <LineChart
-                data={{
-                  labels: [],
-                  datasets: [{
-                    data: [3.8, 4.2, 4.8, 5.3, 5.8, 6.1, 5.9, 5.5, 5.2, 5.6, 5.9, 5.8],
-                  }],
-                }}
-                width={screenWidth - 48}
-                height={180}
-                withVerticalLabels={false}
-                withHorizontalLabels={false}
-                withDots={false}
-                withInnerLines={false}
-                withOuterLines={false}
-                withShadow={false}
-                chartConfig={{
-                  backgroundGradientFrom: '#060b14',
-                  backgroundGradientTo: '#0a1220',
-                  fillShadowGradientFrom: glucoseStatus.main,
-                  fillShadowGradientFromOpacity: 0.6,
-                  fillShadowGradientTo: glucoseStatus.main,
-                  fillShadowGradientToOpacity: 0.02,
-                  color: (opacity = 1) => glucoseStatus.main,
-                  strokeWidth: 2.5,
-                  propsForBackgroundLines: { strokeWidth: 0 },
-                }}
-                bezier
-                style={{ marginLeft: 0, marginRight: 0, paddingRight: 0 }}
+        {/* Email */}
+        <View className="mb-4">
+          <Text className="text-sm font-medium text-foreground mb-2">
+            {t('login.email')}
+          </Text>
+          <View
+            className={`flex-row items-center bg-card border rounded-xl px-4 py-3 ${
+              errors.email ? 'border-red-500' : 'border-border'
+            }`}
+          >
+            <Ionicons name="mail-outline" size={20} color="#94a3b8" />
+            <TextInput
+              value={email}
+              onChangeText={(text) => {
+                setEmail(text);
+                if (errors.email) setErrors((e) => ({ ...e, email: '' }));
+              }}
+              placeholder={t('login.emailPlaceholder')}
+              placeholderTextColor="#64748b"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              className="flex-1 ml-3 text-white"
+            />
+          </View>
+          {errors.email ? (
+            <Text className="text-xs text-red-500 mt-1">{errors.email}</Text>
+          ) : null}
+        </View>
+
+        {/* Password */}
+        <View className="mb-4">
+          <Text className="text-sm font-medium text-foreground mb-2">
+            {t('register.password')}
+          </Text>
+          <View
+            className={`flex-row items-center bg-card border rounded-xl px-4 py-3 ${
+              errors.password ? 'border-red-500' : 'border-border'
+            }`}
+          >
+            <Ionicons name="lock-closed-outline" size={20} color="#94a3b8" />
+            <TextInput
+              value={password}
+              onChangeText={(text) => {
+                setPassword(text);
+                if (errors.password) setErrors((e) => ({ ...e, password: '' }));
+              }}
+              placeholder={t('register.passwordPlaceholder')}
+              placeholderTextColor="#64748b"
+              secureTextEntry={!showPassword}
+              className="flex-1 ml-3 text-white"
+            />
+            <Pressable onPress={() => setShowPassword(!showPassword)}>
+              <Ionicons
+                name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                size={20}
+                color="#94a3b8"
               />
-            </View>
+            </Pressable>
           </View>
+          {errors.password ? (
+            <Text className="text-xs text-red-500 mt-1">{errors.password}</Text>
+          ) : null}
         </View>
 
-        <View style={styles.actionCards}>
-          <Pressable hitSlop={20} style={[styles.actionCard, { backgroundColor: '#4c1d95' }]}>
-            <View style={styles.actionIcon}>
-              <Text style={styles.actionEmoji}>💉</Text>
-            </View>
-            <View>
-              <Text style={styles.actionTitle}>{t('home.insulin')}</Text>
-              <Text style={styles.actionSubtitle}>{t('home.log')}</Text>
-            </View>
-          </Pressable>
-
-          <Pressable hitSlop={20} style={[styles.actionCard, { backgroundColor: '#92400e' }]}>
-            <View style={styles.actionIcon}>
-              <Text style={styles.actionEmoji}>🍴</Text>
-            </View>
-            <View>
-              <Text style={styles.actionTitle}>{t('home.carbs')}</Text>
-              <Text style={styles.actionSubtitle}>{t('home.meal')}</Text>
-            </View>
-          </Pressable>
+        {/* Confirm Password */}
+        <View className="mb-6">
+          <Text className="text-sm font-medium text-foreground mb-2">
+            {t('register.confirmPassword')}
+          </Text>
+          <View
+            className={`flex-row items-center bg-card border rounded-xl px-4 py-3 ${
+              errors.confirmPassword ? 'border-red-500' : 'border-border'
+            }`}
+          >
+            <Ionicons name="shield-checkmark-outline" size={20} color="#94a3b8" />
+            <TextInput
+              value={confirmPassword}
+              onChangeText={(text) => {
+                setConfirmPassword(text);
+                if (errors.confirmPassword)
+                  setErrors((e) => ({ ...e, confirmPassword: '' }));
+              }}
+              placeholder={t('register.confirmPasswordPlaceholder')}
+              placeholderTextColor="#64748b"
+              secureTextEntry={!showConfirm}
+              className="flex-1 ml-3 text-white"
+            />
+            <Pressable onPress={() => setShowConfirm(!showConfirm)}>
+              <Ionicons
+                name={showConfirm ? 'eye-off-outline' : 'eye-outline'}
+                size={20}
+                color="#94a3b8"
+              />
+            </Pressable>
+          </View>
+          {errors.confirmPassword ? (
+            <Text className="text-xs text-red-500 mt-1">{errors.confirmPassword}</Text>
+          ) : null}
         </View>
 
-        <View style={{ height: 100 }} />
+        {/* Register Button */}
+        <Pressable
+          onPress={handleRegister}
+          disabled={isRegisterLoading}
+          className="bg-primary rounded-xl py-3.5 mb-6"
+          style={({ pressed }) => ({
+            opacity: pressed || isRegisterLoading ? 0.7 : 1,
+          })}
+        >
+          {isRegisterLoading ? (
+            <ActivityIndicator color="#ffffff" />
+          ) : (
+            <Text className="text-white font-semibold text-center">
+              {t('register.register')}
+            </Text>
+          )}
+        </Pressable>
+
+        {/* Already have account */}
+        <View className="flex-row items-center justify-center gap-2">
+          <Text className="text-muted-foreground text-sm">
+            {t('register.haveAccount')}
+          </Text>
+          <Pressable onPress={() => navigation.navigate('Login')}>
+            <Text className="text-primary font-medium text-sm">
+              {t('login.login')}
+            </Text>
+          </Pressable>
+        </View>
       </ScrollView>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#020817',
-  },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 48,
-    paddingBottom: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#1e3a5f',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarEmoji: {
-    fontSize: 24,
-  },
-  greeting: {
-    fontSize: 12,
-    color: '#64748b',
-  },
-  userName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#ffffff',
-  },
-  headerRight: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#1e2940',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  notificationDot: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#ef4444',
-  },
-  mainCard: {
-    marginHorizontal: 24,
-    marginBottom: 20,
-    borderRadius: 24,
-    backgroundColor: '#0b1221',
-    overflow: 'hidden',
-  },
-  glucoseSection: {
-    paddingTop: 40,
-    paddingBottom: 30,
-    alignItems: 'center',
-  },
-  glucoseValueRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-  },
-  glucoseValue: {
-    fontSize: 96,
-    fontWeight: '700',
-    lineHeight: 96,
-    letterSpacing: -4,
-  },
-  glucoseUnit: {
-    fontSize: 16,
-    color: '#64748b',
-    marginBottom: 20,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  statusText: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  lastUpdate: {
-    fontSize: 12,
-    color: '#475569',
-    marginTop: 12,
-  },
-  chartSection: {
-    paddingBottom: 20,
-  },
-  chartTitle: {
-    fontSize: 13,
-    color: '#64748b',
-    marginBottom: 12,
-    paddingHorizontal: 24,
-  },
-  chartContainer: {
-    backgroundColor: '#060b14',
-  },
-  actionCards: {
-    paddingHorizontal: 24,
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 24,
-  },
-  actionCard: {
-    flex: 1,
-    borderRadius: 20,
-    padding: 20,
-    minHeight: 140,
-    justifyContent: 'space-between',
-  },
-  actionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionEmoji: {
-    fontSize: 28,
-  },
-  actionTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#ffffff',
-    marginBottom: 2,
-  },
-  actionSubtitle: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.6)',
-  },
-});

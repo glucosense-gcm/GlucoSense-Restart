@@ -18,6 +18,7 @@ export default {
   },
 
   navbar: {
+    
     home: 'Главная',
     history: 'История',
     device: 'Устройство',

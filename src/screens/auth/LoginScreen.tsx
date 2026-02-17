@@ -1,10 +1,32 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, Alert, StatusBar } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  Alert,
+  StatusBar,
+  ActivityIndicator,
+  Platform,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../types/navigation';
-import { useAuth } from '../../context/AuthContext';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import {
+  sendOtp,
+  verifyOtp,
+  googleLogin,
+  appleLogin,
+  clearError,
+  resetOtp,
+} from '../../store/authSlice';
 import { useTranslation } from '../../i18n/useTranslation';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+import * as AppleAuthentication from 'expo-apple-authentication';
+
+WebBrowser.maybeCompleteAuthSession();
 
 type LoginScreenProps = {
   navigation: NativeStackNavigationProp<AuthStackParamList, 'Login'>;
@@ -13,60 +35,108 @@ type LoginScreenProps = {
 export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
-  const [isCodeSent, setIsCodeSent] = useState(false);
-  const [timer, setTimer] = useState(60);
-  const { login } = useAuth();
+  const [timer, setTimer] = useState(0);
+
+  const dispatch = useAppDispatch();
+  const { otpSent, isOtpSending, isLoginLoading, error } = useAppSelector(
+    (state) => state.auth
+  );
   const { t } = useTranslation();
+
+  const [, googleResponse, googlePromptAsync] = Google.useAuthRequest({
+    androidClientId: 'YOUR_ANDROID_CLIENT_ID',
+    iosClientId: 'YOUR_IOS_CLIENT_ID',
+    webClientId: 'YOUR_WEB_CLIENT_ID',
+  });
+
+  useEffect(() => {
+    if (googleResponse?.type === 'success') {
+      const { id_token } = googleResponse.params;
+      if (id_token) {
+        dispatch(googleLogin({ idToken: id_token }));
+      }
+    }
+  }, [googleResponse]);
+
+  useEffect(() => {
+    if (error) {
+      Alert.alert(t('common.error'), error);
+      dispatch(clearError());
+    }
+  }, [error]);
+
+  useEffect(() => {
+    if (timer <= 0) return;
+    const interval = setInterval(() => {
+      setTimer((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [timer]);
 
   const handleSendCode = () => {
     if (!email || !email.includes('@')) {
       Alert.alert(t('common.error'), t('login.errorInvalidEmail'));
       return;
     }
-
-    setIsCodeSent(true);
-    Alert.alert(t('common.success'), t('login.successCodeSent'));
-
-    const interval = setInterval(() => {
-      setTimer((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          return 60;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    dispatch(sendOtp({ email }));
+    setTimer(60);
   };
 
-  const handleLogin = async () => {
+  const handleLogin = () => {
     if (!code || code.length !== 6) {
       Alert.alert(t('common.error'), t('login.errorInvalidCode'));
       return;
     }
+    dispatch(verifyOtp({ email, otp: code }));
+  };
 
+  const handleGoogleLogin = async () => {
     try {
-      // TODO: Real API call here
-      // Mock login - replace with actual API
-      const mockToken = 'mock_token_' + Date.now();
-      const mockUser = {
-        id: '1',
-        email: email,
-        name: 'Test User',
-      };
-
-      await login(mockToken, mockUser);
-      Alert.alert(t('common.success'), t('login.successLogin'));
-    } catch (error) {
-      Alert.alert(t('common.error'), 'Login failed');
+      await googlePromptAsync();
+    } catch {
+      Alert.alert(t('common.error'), 'Google login failed');
     }
   };
 
-  const handleGoogleLogin = () => {
-    Alert.alert('Google', t('alerts.featureComingSoon'));
+  const handleAppleLogin = async () => {
+    if (Platform.OS !== 'ios') {
+      Alert.alert('Apple Sign In', 'Apple Sign In is only available on iOS');
+      return;
+    }
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+      if (credential.identityToken) {
+        dispatch(
+          appleLogin({
+            identityToken: credential.identityToken,
+            fullName: credential.fullName,
+            email: credential.email,
+          })
+        );
+      }
+    } catch (e: any) {
+      if (e.code !== 'ERR_REQUEST_CANCELED') {
+        Alert.alert(t('common.error'), 'Apple login failed');
+      }
+    }
   };
 
-  const handleAppleLogin = () => {
-    Alert.alert('Apple', t('alerts.featureComingSoon'));
+  const handleResend = () => {
+    if (timer > 0) return;
+    dispatch(resetOtp());
+    setCode('');
+    handleSendCode();
   };
 
   return (
@@ -97,20 +167,26 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
               placeholderTextColor="#64748b"
               keyboardType="email-address"
               autoCapitalize="none"
+              editable={!otpSent}
               className="flex-1 ml-3 text-white"
             />
           </View>
         </View>
 
-        {!isCodeSent ? (
+        {!otpSent ? (
           <Pressable
             onPress={handleSendCode}
+            disabled={isOtpSending}
             className="bg-primary rounded-xl py-3.5 mb-6"
-            style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
+            style={({ pressed }) => ({ opacity: pressed || isOtpSending ? 0.7 : 1 })}
           >
-            <Text className="text-white font-semibold text-center">
-              {t('login.sendCode')}
-            </Text>
+            {isOtpSending ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <Text className="text-white font-semibold text-center">
+                {t('login.sendCode')}
+              </Text>
+            )}
           </Pressable>
         ) : (
           <>
@@ -140,7 +216,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                     {timer} {t('login.seconds')}
                   </Text>
                 ) : (
-                  <Pressable onPress={handleSendCode}>
+                  <Pressable onPress={handleResend}>
                     <Text className="text-xs text-primary font-medium">
                       {t('login.resendCode')}
                     </Text>
@@ -151,12 +227,17 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
             <Pressable
               onPress={handleLogin}
+              disabled={isLoginLoading}
               className="bg-primary rounded-xl py-3.5 mb-6"
-              style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
+              style={({ pressed }) => ({ opacity: pressed || isLoginLoading ? 0.7 : 1 })}
             >
-              <Text className="text-white font-semibold text-center">
-                {t('login.login')}
-              </Text>
+              {isLoginLoading ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <Text className="text-white font-semibold text-center">
+                  {t('login.login')}
+                </Text>
+              )}
             </Pressable>
           </>
         )}
