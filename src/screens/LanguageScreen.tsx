@@ -32,7 +32,8 @@ export default function LanguageScreen({ navigation }: LanguageScreenProps) {
   const handleContinue = async () => {
     try {
       await dispatch(changeLanguage(selectedLanguage));
-      navigation.replace('Login');
+      // RootNavigator avtomatik Login ekraniga o'tkazadi
+      // chunki isLanguageSelected=true, isAuthenticated=false
     } catch (error) {
       console.error('Error saving language:', error);
       Alert.alert(t('common.error'), 'Failed to save language');
