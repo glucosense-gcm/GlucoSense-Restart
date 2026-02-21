@@ -5,7 +5,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../types/navigation';
 import { useAppDispatch } from '../../store/hooks';
 import { setCredentials } from '../../store/slices/authSlice';
-import { useSendCodeMutation, useVerifyCodeMutation, useFirebaseAuthMutation } from '../../store/services/authService';
+import { useLoginMutation, useFirebaseAuthMutation } from '../../store/services/authService';
 import { useGoogleAuth } from '../../utils/googleAuth';
 
 type LoginScreenProps = {
@@ -14,64 +14,39 @@ type LoginScreenProps = {
 
 export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [email, setEmail] = useState('');
-  const [code, setCode] = useState('');
-  const [isCodeSent, setIsCodeSent] = useState(false);
-  const [timer, setTimer] = useState(60);
+  const [password, setPassword] = useState('');
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const dispatch = useAppDispatch();
 
-  const [sendCode, { isLoading: isSendingCode }] = useSendCodeMutation();
-  const [verifyCode, { isLoading: isVerifying }] = useVerifyCodeMutation();
+  const [login, { isLoading: isLoginLoading }] = useLoginMutation();
   const [firebaseAuth, { isLoading: isGoogleLoading }] = useFirebaseAuthMutation();
 
-  const { request, response, promptAsync } = useGoogleAuth();
+  const { response, promptAsync } = useGoogleAuth();
 
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isCodeSent && timer > 0) {
-      interval = setInterval(() => {
-        setTimer((prev) => prev - 1);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [isCodeSent, timer]);
-
-  const handleSendCode = async () => {
+  const handleLogin = async () => {
     if (!email || !email.includes('@')) {
       Alert.alert('Xato', 'Iltimos, togri email kiriting');
       return;
     }
 
-    try {
-      const result = await sendCode({ email }).unwrap();
-      setIsCodeSent(true);
-      setTimer(60);
-      Alert.alert('Muvaffaqiyat!', result.message || 'Kod emailga yuborildi!');
-    } catch (error: any) {
-      console.error('Send code error:', error);
-      const errorMessage = error?.data?.message || error?.message || 'Kod yuborishda xatolik';
-      Alert.alert('Xato', errorMessage);
-    }
-  };
-
-  const handleLogin = async () => {
-    if (!code || code.length !== 6) {
-      Alert.alert('Xato', '6-xonali kodni kiriting');
+    if (!password || password.length < 6) {
+      Alert.alert('Xato', 'Iltimos, parolni kiriting');
       return;
     }
 
     try {
-      const result = await verifyCode({ email, code }).unwrap();
+      const result = await login({
+        email: email.trim().toLowerCase(),
+        password,
+      }).unwrap();
 
-      // Save credentials to Redux store and SecureStore
       dispatch(setCredentials({
         token: result.data.token,
-        user: result.data.user
+        user: result.data.user,
       }));
-
-      // Navigation handled automatically by RootNavigator
     } catch (error: any) {
-      console.error('Verify code error:', error);
-      const errorMessage = error?.data?.message || error?.message || 'Kod noto\'g\'ri yoki muddati tugagan';
+      console.error('Login error:', error);
+      const errorMessage = error?.data?.message || error?.message || 'Login xatolik';
       Alert.alert('Xato', errorMessage);
     }
   };
@@ -96,7 +71,6 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
         provider: 'google'
       }).unwrap();
 
-      // Save credentials
       dispatch(setCredentials({
         token: result.data.token,
         user: result.data.user
@@ -132,7 +106,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
             Xush kelibsiz!
           </Text>
           <Text className="text-sm text-muted-foreground">
-            Tizimga kirish uchun email kiriting
+            Tizimga kirish uchun email va parol kiriting
           </Text>
         </View>
 
@@ -154,74 +128,45 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           </View>
         </View>
 
-        {!isCodeSent ? (
-          <Pressable
-            onPress={handleSendCode}
-            disabled={isSendingCode}
-            className="bg-primary rounded-xl py-3.5 mb-6"
-            style={({ pressed }) => ({ opacity: pressed || isSendingCode ? 0.7 : 1 })}
-          >
-            {isSendingCode ? (
-              <ActivityIndicator color="#ffffff" />
-            ) : (
-              <Text className="text-white font-semibold text-center">
-                Kod yuborish
-              </Text>
-            )}
-          </Pressable>
-        ) : (
-          <>
-            <View className="mb-4">
-              <Text className="text-sm font-medium text-foreground mb-2">
-                Tasdiqlash kodi
-              </Text>
-              <View className="flex-row items-center bg-card border border-border rounded-xl px-4 py-3">
-                <Ionicons name="lock-closed-outline" size={20} color="#94a3b8" />
-                <TextInput
-                  value={code}
-                  onChangeText={setCode}
-                  placeholder="000000"
-                  placeholderTextColor="#64748b"
-                  keyboardType="number-pad"
-                  maxLength={6}
-                  className="flex-1 ml-3 text-white tracking-widest"
-                />
-              </View>
-
-              <View className="flex-row items-center justify-between mt-2">
-                <Text className="text-xs text-muted-foreground">
-                  Kod emailga yuborildi
-                </Text>
-                {timer > 0 ? (
-                  <Text className="text-xs text-primary">
-                    {timer} soniya
-                  </Text>
-                ) : (
-                  <Pressable onPress={handleSendCode}>
-                    <Text className="text-xs text-primary font-medium">
-                      Qayta yuborish
-                    </Text>
-                  </Pressable>
-                )}
-              </View>
-            </View>
-
-            <Pressable
-              onPress={handleLogin}
-              disabled={isVerifying}
-              className="bg-primary rounded-xl py-3.5 mb-6"
-              style={({ pressed }) => ({ opacity: pressed || isVerifying ? 0.7 : 1 })}
-            >
-              {isVerifying ? (
-                <ActivityIndicator color="#ffffff" />
-              ) : (
-                <Text className="text-white font-semibold text-center">
-                  Kirish
-                </Text>
-              )}
+        <View className="mb-6">
+          <Text className="text-sm font-medium text-foreground mb-2">
+            Parol
+          </Text>
+          <View className="flex-row items-center bg-card border border-border rounded-xl px-4 py-3">
+            <Ionicons name="lock-closed-outline" size={20} color="#94a3b8" />
+            <TextInput
+              value={password}
+              onChangeText={setPassword}
+              placeholder="******"
+              placeholderTextColor="#64748b"
+              autoCapitalize="none"
+              secureTextEntry={!isPasswordVisible}
+              className="flex-1 ml-3 text-white"
+            />
+            <Pressable onPress={() => setIsPasswordVisible((prev) => !prev)}>
+              <Ionicons
+                name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
+                size={20}
+                color="#94a3b8"
+              />
             </Pressable>
-          </>
-        )}
+          </View>
+        </View>
+
+        <Pressable
+          onPress={handleLogin}
+          disabled={isLoginLoading}
+          className="bg-primary rounded-xl py-3.5 mb-6"
+          style={({ pressed }) => ({ opacity: pressed || isLoginLoading ? 0.7 : 1 })}
+        >
+          {isLoginLoading ? (
+            <ActivityIndicator color="#ffffff" />
+          ) : (
+            <Text className="text-white font-semibold text-center">
+              Kirish
+            </Text>
+          )}
+        </Pressable>
 
         <View className="flex-row items-center mb-6">
           <View className="flex-1 h-px bg-border" />
@@ -232,11 +177,18 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
         <View className="gap-3 mb-8">
           <Pressable
             onPress={handleGoogleLogin}
+            disabled={isGoogleLoading}
             className="flex-row items-center justify-center gap-3 bg-card border border-border rounded-xl py-3"
-            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+            style={({ pressed }) => ({ opacity: pressed || isGoogleLoading ? 0.7 : 1 })}
           >
-            <Ionicons name="logo-google" size={24} color="#4285F4" />
-            <Text className="text-white font-medium">Google bilan kirish</Text>
+            {isGoogleLoading ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <>
+                <Ionicons name="logo-google" size={24} color="#4285F4" />
+                <Text className="text-white font-medium">Google bilan kirish</Text>
+              </>
+            )}
           </Pressable>
 
           <Pressable
